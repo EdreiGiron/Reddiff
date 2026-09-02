@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.presentacion {
+  display: grid;
+  min-height: 100dvh;
+  padding: 2rem;
+  place-items: center;
+  background: linear-gradient(145deg, #edf4f8 0%, #dceaf2 100%);
+}
+
+.presentacion__contenido {
+  width: min(100%, 48rem);
+  padding: clamp(2rem, 6vw, 4rem);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #c8d9e4;
+  border-radius: 1rem;
+  box-shadow: 0 1.25rem 3rem rgba(18, 59, 93, 0.12);
+}
+
+.presentacion__marca {
+  margin: 0 0 0.75rem;
+  color: #176b87;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  color: #123b5d;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.08;
+}
+
+.presentacion__descripcion {
+  max-width: 40rem;
+  margin: 1.25rem 0 0;
+  color: #40566b;
+  font-size: 1.125rem;
+  line-height: 1.65;
+}

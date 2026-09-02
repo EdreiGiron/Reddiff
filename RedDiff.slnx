@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/Servidor/" />
+  <Folder Name="/Servidor/Fuente/">
+    <Project Path="servidor/fuente/RedDiff.Api/RedDiff.Api.csproj" />
+    <Project Path="servidor/fuente/RedDiff.Aplicacion/RedDiff.Aplicacion.csproj" />
+    <Project Path="servidor/fuente/RedDiff.Dominio/RedDiff.Dominio.csproj" />
+    <Project Path="servidor/fuente/RedDiff.Infraestructura/RedDiff.Infraestructura.csproj" />
+    <Project Path="servidor/fuente/RedDiff.Procesador/RedDiff.Procesador.csproj" />
+  </Folder>
+  <Folder Name="/Servidor/Pruebas/">
+    <Project Path="servidor/pruebas/RedDiff.PruebasArquitectura/RedDiff.PruebasArquitectura.csproj" />
+    <Project Path="servidor/pruebas/RedDiff.PruebasIntegracion/RedDiff.PruebasIntegracion.csproj" />
+    <Project Path="servidor/pruebas/RedDiff.PruebasUnitarias/RedDiff.PruebasUnitarias.csproj" />
+  </Folder>
+</Solution>
