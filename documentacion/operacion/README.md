@@ -10,3 +10,7 @@ Esta carpeta reunirá instrucciones reproducibles para:
 - investigar fallos sin exponer información sensible.
 
 Los procedimientos deben indicar requisitos previos, comandos, resultado esperado y forma segura de revertir una operación.
+
+Procedimientos disponibles:
+
+- [Base de datos local con Docker](base-datos-local.md).

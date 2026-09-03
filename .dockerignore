@@ -19,3 +19,5 @@
 !.env.example
 
 documentacion
+configuracion/secretos
+configuracion/entornos/*.env

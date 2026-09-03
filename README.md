@@ -51,6 +51,24 @@ npm test -- --watch=false
 npx prettier --check src
 ```
 
+## Base de datos local
+
+La infraestructura de desarrollo utiliza PostgreSQL en Docker. La preparación genera una contraseña aleatoria local y nunca la incorpora al repositorio.
+
+```powershell
+.\automatizacion\powershell\Preparar-EntornoDesarrollo.ps1
+.\automatizacion\powershell\Iniciar-Infraestructura.ps1
+.\automatizacion\powershell\Verificar-Infraestructura.ps1
+```
+
+Para detener los contenedores conservando los datos:
+
+```powershell
+.\automatizacion\powershell\Detener-Infraestructura.ps1
+```
+
+Consulte [documentacion/operacion/base-datos-local.md](documentacion/operacion/base-datos-local.md) para conocer el procedimiento completo.
+
 ## Convenciones esenciales
 
 - El código propio utiliza nombres en español, sin tildes ni la letra `ñ` en los identificadores.
