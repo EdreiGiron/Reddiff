@@ -12,7 +12,7 @@ Sistema web para capturar, versionar, comparar y auditar configuraciones de disp
 - Contenedores: Docker y Docker Compose.
 - Pruebas del servidor: xUnit.
 
-Las versiones exactas se fijan mediante `global.json`, `package-lock.json` y, posteriormente, las imágenes de los contenedores.
+Las versiones exactas se fijan mediante `global.json`, `Directory.Packages.props`, `package-lock.json`, el manifiesto local de herramientas .NET y las imágenes de los contenedores.
 
 ## Estructura general
 
@@ -58,6 +58,7 @@ La infraestructura de desarrollo utiliza PostgreSQL en Docker. La preparación g
 ```powershell
 .\automatizacion\powershell\Preparar-EntornoDesarrollo.ps1
 .\automatizacion\powershell\Iniciar-Infraestructura.ps1
+.\automatizacion\powershell\Configurar-UsuarioAplicacion.ps1
 .\automatizacion\powershell\Verificar-Infraestructura.ps1
 ```
 
@@ -68,6 +69,21 @@ Para detener los contenedores conservando los datos:
 ```
 
 Consulte [documentacion/operacion/base-datos-local.md](documentacion/operacion/base-datos-local.md) para conocer el procedimiento completo.
+
+## API local
+
+La API utiliza una cuenta de PostgreSQL distinta de la cuenta administradora. Su contraseña se carga temporalmente desde un archivo ignorado por Git:
+
+```powershell
+.\automatizacion\powershell\Iniciar-Api.ps1
+```
+
+Comprobaciones disponibles:
+
+- `GET /salud/vivo`: confirma que el proceso responde;
+- `GET /salud/listo`: confirma la conexión de la API con PostgreSQL.
+
+Consulte [documentacion/operacion/api-local.md](documentacion/operacion/api-local.md) para conocer el procedimiento completo.
 
 ## Convenciones esenciales
 

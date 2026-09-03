@@ -4,7 +4,7 @@
 
 Este procedimiento inicia PostgreSQL 18.6 para desarrollo. El servicio solamente publica el puerto en la interfaz local y conserva sus datos en un volumen administrado por Docker.
 
-La cuenta configurada aquí es administrativa y se utilizará únicamente para preparar la base y aplicar migraciones. La aplicación recibirá posteriormente un usuario distinto con privilegios limitados.
+La cuenta configurada aquí es administrativa y se utilizará únicamente para preparar la base y aplicar migraciones. La aplicación utiliza un usuario distinto con privilegios limitados.
 
 ## Primera preparación
 
@@ -17,7 +17,8 @@ Desde la raíz del repositorio:
 El script crea, sin sobrescribir archivos existentes:
 
 - `configuracion/entornos/desarrollo.env`, con opciones no sensibles;
-- `configuracion/secretos/postgresql_contrasena.txt`, con una contraseña aleatoria que no se muestra en pantalla.
+- `configuracion/secretos/postgresql_contrasena.txt`, con la contraseña administrativa;
+- `configuracion/secretos/postgresql_aplicacion_contrasena.txt`, con una contraseña independiente para la API.
 
 Ambos valores locales permanecen fuera de Git. El archivo de contraseña también queda fuera del contexto de construcción de Docker.
 
@@ -25,6 +26,7 @@ Ambos valores locales permanecen fuera de Git. El archivo de contraseña tambié
 
 ```powershell
 .\automatizacion\powershell\Iniciar-Infraestructura.ps1
+.\automatizacion\powershell\Configurar-UsuarioAplicacion.ps1
 .\automatizacion\powershell\Verificar-Infraestructura.ps1
 ```
 
@@ -44,6 +46,8 @@ La conexión desde una herramienta instalada en Windows utiliza:
 | Base de datos | `reddiff` |
 | Usuario administrativo | `reddiff_admin` |
 | Contraseña | Contenido local de `configuracion/secretos/postgresql_contrasena.txt` |
+| Usuario de aplicación | `reddiff_app` |
+| Contraseña de aplicación | Contenido local de `configuracion/secretos/postgresql_aplicacion_contrasena.txt` |
 
 ## Detención sin pérdida de datos
 

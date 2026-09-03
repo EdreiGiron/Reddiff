@@ -14,3 +14,4 @@ Los procedimientos deben indicar requisitos previos, comandos, resultado esperad
 Procedimientos disponibles:
 
 - [Base de datos local con Docker](base-datos-local.md).
+- [API local y acceso a PostgreSQL](api-local.md).

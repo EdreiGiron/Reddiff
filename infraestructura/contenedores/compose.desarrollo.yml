@@ -8,6 +8,7 @@ services:
     environment:
       POSTGRES_DB: "${REDDIFF_BD_NOMBRE:-reddiff}"
       POSTGRES_USER: "${REDDIFF_BD_USUARIO_ADMIN:-reddiff_admin}"
+      REDDIFF_BD_USUARIO_APLICACION: "${REDDIFF_BD_USUARIO_APLICACION:-reddiff_app}"
       POSTGRES_PASSWORD_FILE: /run/secrets/postgresql_contrasena
       POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
       TZ: "${REDDIFF_ZONA_HORARIA:-America/Guatemala}"
@@ -20,6 +21,7 @@ services:
       - ../base-datos/herramientas:/opt/reddiff/herramientas:ro
     secrets:
       - postgresql_contrasena
+      - postgresql_aplicacion_contrasena
     networks:
       - red-interna
     healthcheck:
@@ -53,3 +55,5 @@ volumes:
 secrets:
   postgresql_contrasena:
     file: ../../configuracion/secretos/postgresql_contrasena.txt
+  postgresql_aplicacion_contrasena:
+    file: ../../configuracion/secretos/postgresql_aplicacion_contrasena.txt
