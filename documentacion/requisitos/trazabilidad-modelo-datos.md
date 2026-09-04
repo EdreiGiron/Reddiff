@@ -4,8 +4,8 @@ Esta matriz relaciona la primera implementación del dominio con los requerimien
 
 | Requisito | Entidades principales | Cobertura del modelo |
 | --- | --- | --- |
-| RF-01 | `usuario`, `rol`, `auditoria` | Cuenta activa, hash de contraseña, rol y registro del resultado. |
-| RF-02 | `usuario`, `rol`, `auditoria` | Administración lógica de cuentas, roles y estados. |
+| RF-01 | `usuario`, `rol`, `auditoria` | Cuenta activa, hash PBKDF2, sesión cifrada, validación de vigencia y auditoría de accesos. |
+| RF-02 | `usuario`, `rol`, `auditoria` | API administrativa para crear, consultar, modificar, activar y desactivar cuentas y asignar roles. |
 | RF-03 | `dispositivo` | Nombre, host, tipo, modelo, protocolo, puerto, fuente y autorización. |
 | RF-04 | `captura`, `version_config` | Captura bajo demanda mediante SSH, NETCONF o archivo. |
 | RF-05 | `evento_cambio`, `captura` | Evento deduplicable que puede originar una sola captura. |
@@ -20,12 +20,12 @@ Esta matriz relaciona la primera implementación del dominio con los requerimien
 
 | Requisito no funcional | Decisión aplicada |
 | --- | --- |
-| RNF-01 | Usuario asociado a rol; autorización y sesión se implementarán en la capa de aplicación/API. |
-| RNF-02 | Solo se almacena el hash de contraseña; el contenido sensible permanece separado de la auditoría. |
+| RNF-01 | Cookie cifrada, autorización por roles, sesión limitada y revocación al desactivar usuario o rol. |
+| RNF-02 | Hash PBKDF2 con sal aleatoria; cookies `HttpOnly`; protección CSRF, CORS exacto y límite de intentos. |
 | RNF-03 | Huellas SHA-256, claves foráneas, índices únicos y metadatos UTC. |
 | RNF-04 | Entidad de auditoría y referencias persistentes entre operaciones y resultados. |
 | RNF-05 | Índices en fechas, estados y claves utilizadas por historial y resultados. |
 | RNF-08 | Dominio sin dependencia de EF Core y configuraciones aisladas en Infraestructura. |
 | RNF-10 | Tipo, fuente, huella, estado y dispositivo asociado para cada evento recibido. |
 
-Esta cobertura representa la estructura persistente. Los endpoints, autorización, algoritmos y validaciones que requieren consultas se vincularán a la matriz conforme se implementen los módulos funcionales.
+Las pruebas de dominio, aplicación e integración verifican la normalización de cuentas, la protección de contraseñas, el rechazo CSRF, la sesión, los roles, la auditoría y las restricciones administrativas.

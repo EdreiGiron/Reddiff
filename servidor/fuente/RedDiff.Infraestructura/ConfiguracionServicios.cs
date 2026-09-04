@@ -4,7 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using RedDiff.Aplicacion.Abstracciones.Persistencia;
+using RedDiff.Aplicacion.Abstracciones.Seguridad;
 using RedDiff.Infraestructura.Persistencia;
+using RedDiff.Infraestructura.Persistencia.Repositorios;
+using RedDiff.Infraestructura.Seguridad;
 
 namespace RedDiff.Infraestructura;
 
@@ -74,6 +77,10 @@ public static class ConfiguracionServicios
 
         servicios.AddScoped<IUnidadDeTrabajo>(proveedorServicios =>
             proveedorServicios.GetRequiredService<ContextoRedDiff>());
+        servicios.AddScoped<IRepositorioUsuarios, RepositorioUsuarios>();
+        servicios.AddScoped<IRepositorioRoles, RepositorioRoles>();
+        servicios.AddScoped<IRepositorioAuditorias, RepositorioAuditorias>();
+        servicios.AddSingleton<IProtectorContrasena, ProtectorContrasenaPbkdf2>();
 
         return servicios;
     }

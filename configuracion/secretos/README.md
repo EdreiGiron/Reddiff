@@ -9,4 +9,12 @@ El contenido real de esta carpeta está excluido de Git y del contexto de constr
 
 El script nunca muestra las contraseñas en la consola ni reemplaza secretos existentes.
 
+Después de validar la migración inicial, las credenciales pueden renovarse de forma coordinada con:
+
+```powershell
+.\automatizacion\powershell\Rotar-CredencialesDesarrollo.ps1 -Confirmar
+```
+
+La operación cambia ambas identidades dentro de una transacción, recrea el contenedor y verifica las conexiones administrativa y de aplicación. Los archivos temporales `.nuevo` y `.anterior` permanecen ignorados y solo se conservan si hace falta recuperar una rotación incompleta.
+
 Los secretos productivos deberán administrarse con el mecanismo seguro de la plataforma; no se copiarán desde esta carpeta.

@@ -2,7 +2,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica y modelo de dominio en construcción. La solución aún no debe utilizarse en producción.
+> Estado actual: cimentación técnica, modelo persistente e identidad inicial implementados. La solución aún no debe utilizarse en producción.
 
 ## Tecnologías principales
 
@@ -84,6 +84,8 @@ Comprobaciones disponibles:
 - `GET /salud/listo`: confirma la conexión de la API con PostgreSQL.
 
 Consulte [documentacion/operacion/api-local.md](documentacion/operacion/api-local.md) para conocer el procedimiento completo.
+
+La autenticación utiliza una sesión web cifrada y autorización mediante los roles `Administrador` y `Tecnico`. Consulte [documentacion/seguridad/autenticacion-y-autorizacion.md](documentacion/seguridad/autenticacion-y-autorizacion.md).
 
 ## Convenciones esenciales
 

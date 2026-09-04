@@ -1,14 +1,31 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using RedDiff.Aplicacion.Seguridad.Autenticacion;
+using RedDiff.Aplicacion.Seguridad.Inicializacion;
+using RedDiff.Aplicacion.Seguridad.Usuarios;
+using RedDiff.Api.Seguridad;
 using RedDiff.Api.Salud;
 using RedDiff.Infraestructura;
 using RedDiff.Infraestructura.Persistencia;
 
-var builder = WebApplication.CreateBuilder(args);
+const string ArgumentoInicializacion = "--inicializar-administrador";
+bool inicializarAdministrador = args.Contains(ArgumentoInicializacion, StringComparer.Ordinal);
+string[] argumentosAplicacion = args
+    .Where(argumento => !string.Equals(argumento, ArgumentoInicializacion, StringComparison.Ordinal))
+    .ToArray();
 
-builder.Services.AddControllers();
+var builder = WebApplication.CreateBuilder(argumentosAplicacion);
+
+builder.Services.AddControllersWithViews(opciones =>
+    opciones.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.AddOpenApi();
 builder.Services.AgregarInfraestructura(builder.Configuration, builder.Environment);
+builder.Services.AgregarSeguridad(builder.Configuration, builder.Environment);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ServicioAutenticacion>();
+builder.Services.AddScoped<ServicioGestionUsuarios>();
+builder.Services.AddScoped<ServicioInicializacionIdentidad>();
 builder.Services
     .AddHealthChecks()
     .AddDbContextCheck<ContextoRedDiff>(
@@ -18,6 +35,30 @@ builder.Services
 
 var app = builder.Build();
 
+if (inicializarAdministrador)
+{
+    using IServiceScope alcance = app.Services.CreateScope();
+    ServicioInicializacionIdentidad inicializador = alcance.ServiceProvider
+        .GetRequiredService<ServicioInicializacionIdentidad>();
+
+    string nombreUsuario = app.Configuration["Seguridad:AdministradorInicial:NombreUsuario"]
+        ?? string.Empty;
+    string contrasena = app.Configuration["Seguridad:AdministradorInicial:Contrasena"]
+        ?? string.Empty;
+
+    var resultado = await inicializador.InicializarAsync(nombreUsuario, contrasena);
+    if (!resultado.Exitoso)
+    {
+        Console.Error.WriteLine(resultado.Error!.Mensaje);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    Console.WriteLine(
+        $"Identidad inicializada para el usuario {resultado.Valor!.NombreUsuario}.");
+    return;
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -25,6 +66,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+app.UseCors(PoliticasSeguridad.CorsCliente);
+app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

@@ -15,10 +15,7 @@ public sealed class Usuario
     public Usuario(long rolId, string nombreUsuario, string contrasenaHash)
     {
         RolId = ValidacionDominio.Identificador(rolId, nameof(rolId));
-        NombreUsuario = ValidacionDominio.TextoObligatorio(
-            nombreUsuario,
-            nameof(nombreUsuario),
-            100);
+        NombreUsuario = NormalizarNombreUsuario(nombreUsuario);
         ContrasenaHash = ValidacionDominio.TextoObligatorio(
             contrasenaHash,
             nameof(contrasenaHash),
@@ -53,6 +50,11 @@ public sealed class Usuario
         RolId = ValidacionDominio.Identificador(rolId, nameof(rolId));
     }
 
+    public void CambiarNombreUsuario(string nombreUsuario)
+    {
+        NombreUsuario = NormalizarNombreUsuario(nombreUsuario);
+    }
+
     public void ActualizarContrasenaHash(string contrasenaHash)
     {
         ContrasenaHash = ValidacionDominio.TextoObligatorio(
@@ -69,5 +71,31 @@ public sealed class Usuario
     public void Desactivar()
     {
         Estado = false;
+    }
+
+    public static string NormalizarNombreUsuario(string nombreUsuario)
+    {
+        string nombreNormalizado = ValidacionDominio.TextoObligatorio(
+            nombreUsuario,
+            nameof(nombreUsuario),
+            100).ToLowerInvariant();
+
+        if (nombreNormalizado.Length < 3)
+        {
+            throw new ArgumentException(
+                "El nombre de usuario debe contener al menos 3 caracteres.",
+                nameof(nombreUsuario));
+        }
+
+        if (nombreNormalizado.Any(static caracter =>
+                !char.IsLetterOrDigit(caracter)
+                && caracter is not '.' and not '_' and not '-'))
+        {
+            throw new ArgumentException(
+                "El nombre de usuario solo admite letras, números, punto, guion y guion bajo.",
+                nameof(nombreUsuario));
+        }
+
+        return nombreNormalizado;
     }
 }

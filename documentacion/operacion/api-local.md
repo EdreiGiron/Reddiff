@@ -29,6 +29,16 @@ dotnet test .\RedDiff.slnx --configuration Debug --no-build
 
 ## Iniciar la API
 
+La primera vez, cree el catálogo de roles y la cuenta administrativa:
+
+```powershell
+.\automatizacion\powershell\Inicializar-Administrador.ps1 -Confirmar
+```
+
+No se genera una contraseña predeterminada. El script la solicita de forma oculta y rechaza una segunda inicialización.
+
+Después inicie el servicio:
+
 ```powershell
 .\automatizacion\powershell\Iniciar-Api.ps1
 ```
@@ -50,3 +60,5 @@ Invoke-RestMethod http://localhost:5088/salud/listo
 Ambas respuestas deben mostrar `estado` con valor `saludable`. La segunda responderá con código HTTP 503 cuando PostgreSQL no esté disponible o la configuración sea incorrecta.
 
 Para detener la API, presione `Ctrl+C` en la terminal donde se está ejecutando.
+
+El flujo de sesión y los endpoints administrativos se describen en [autenticación y autorización](../seguridad/autenticacion-y-autorizacion.md).

@@ -10,6 +10,7 @@ public sealed class ModeloDominioPruebas
     {
         Type[] entidades = typeof(Captura).Assembly
             .GetTypes()
+            .Where(tipo => tipo.IsClass && tipo.IsPublic && !tipo.IsNested)
             .Where(tipo => tipo.Namespace?.StartsWith(
                 "RedDiff.Dominio.Entidades.",
                 StringComparison.Ordinal) == true)

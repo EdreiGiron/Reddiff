@@ -13,3 +13,6 @@ Los archivos se guardan como UTF-8 con BOM porque Windows PowerShell 5.1 necesit
 | `Detener-Infraestructura.ps1` | Detener servicios conservando datos o, con una opción explícita, eliminar el volumen local. |
 | `Iniciar-Api.ps1` | Cargar temporalmente el secreto local e iniciar la API sin escribir credenciales en el repositorio. |
 | `Preparar-MigracionInicial.ps1` | Generar la migración inicial y un script SQL idempotente para revisión, sin modificar la base de datos. |
+| `Aplicar-MigracionInicial.ps1` | Aplicar exclusivamente la migración inicial revisada y verificar el esquema y los privilegios. |
+| `Inicializar-Administrador.ps1` | Crear localmente los roles funcionales y la primera cuenta administrativa, sin contraseña predeterminada. |
+| `Rotar-CredencialesDesarrollo.ps1` | Rotar las credenciales de PostgreSQL y verificar ambas identidades antes de retirar respaldos. |

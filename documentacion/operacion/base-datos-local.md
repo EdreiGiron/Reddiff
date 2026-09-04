@@ -61,6 +61,22 @@ El script utiliza temporalmente la identidad administrativa, genera los archivos
 
 Esta operación no ejecuta la migración. El SQL debe revisarse antes de autorizar cualquier cambio sobre PostgreSQL.
 
+Después de la revisión, la migración aprobada se aplica y verifica con:
+
+```powershell
+.\automatizacion\powershell\Aplicar-MigracionInicial.ps1 -Confirmar
+```
+
+## Rotación de credenciales locales
+
+Después de comprobar el esquema puede reemplazar las dos credenciales generadas durante la preparación:
+
+```powershell
+.\automatizacion\powershell\Rotar-CredencialesDesarrollo.ps1 -Confirmar
+```
+
+La operación actualiza PostgreSQL en una transacción, reemplaza los archivos locales, recrea el contenedor y comprueba las identidades administrativa y de aplicación. Si PostgreSQL ya cambió pero una comprobación posterior falla, los archivos `.nuevo` y `.anterior` se conservan para recuperación y no deben eliminarse hasta resolver el incidente.
+
 ## Detención sin pérdida de datos
 
 ```powershell
