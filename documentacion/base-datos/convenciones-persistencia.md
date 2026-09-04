@@ -25,4 +25,4 @@ Las cadenas de conexión no se guardan en archivos versionados. En desarrollo, `
 
 ## Migraciones
 
-Las migraciones se incorporarán cuando esté definido el primer conjunto de entidades. Deben revisarse antes de aplicarse, incluirse en Git y ejecutarse de forma explícita con la cuenta administradora. La API no aplicará migraciones automáticamente durante su inicio.
+La migración inicial se generará después de validar la compilación y las configuraciones del primer modelo. Debe revisarse antes de aplicarse, incluirse en Git y ejecutarse de forma explícita con la cuenta administradora. La API no aplicará migraciones automáticamente durante su inicio.

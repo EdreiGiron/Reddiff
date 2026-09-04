@@ -49,6 +49,18 @@ La conexión desde una herramienta instalada en Windows utiliza:
 | Usuario de aplicación | `reddiff_app` |
 | Contraseña de aplicación | Contenido local de `configuracion/secretos/postgresql_aplicacion_contrasena.txt` |
 
+## Preparación de la migración inicial
+
+Después de compilar y probar el modelo, la migración inicial y su script SQL de revisión se generan mediante:
+
+```powershell
+.\automatizacion\powershell\Preparar-MigracionInicial.ps1
+```
+
+El script utiliza temporalmente la identidad administrativa, genera los archivos de Entity Framework Core dentro de `RedDiff.Infraestructura/Persistencia/Migraciones` y escribe un SQL idempotente en `infraestructura/base-datos/migraciones/migracion-inicial.sql`.
+
+Esta operación no ejecuta la migración. El SQL debe revisarse antes de autorizar cualquier cambio sobre PostgreSQL.
+
 ## Detención sin pérdida de datos
 
 ```powershell

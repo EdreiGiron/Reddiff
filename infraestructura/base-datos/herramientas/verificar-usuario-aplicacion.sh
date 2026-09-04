@@ -9,4 +9,4 @@ exec psql \
     --username="$REDDIFF_BD_USUARIO_APLICACION" \
     --dbname="$POSTGRES_DB" \
     --set=ON_ERROR_STOP=1 \
-    --command="SELECT current_database() AS base_datos, current_user AS usuario_aplicacion;"
+    --file=/opt/reddiff/herramientas/verificar-usuario-aplicacion.sql

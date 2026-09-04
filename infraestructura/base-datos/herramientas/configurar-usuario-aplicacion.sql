@@ -12,7 +12,7 @@ WHERE NOT EXISTS (
 \gexec
 
 SELECT format(
-    'ALTER ROLE %I WITH LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION CONNECTION LIMIT 20',
+    'ALTER ROLE %I WITH LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 20',
     :'usuario_aplicacion',
     :'contrasena_aplicacion')
 \gexec
@@ -47,6 +47,12 @@ SELECT format(
 SELECT format(
     'ALTER DEFAULT PRIVILEGES IN SCHEMA reddiff GRANT USAGE, SELECT ON SEQUENCES TO %I',
     :'usuario_aplicacion')
+\gexec
+
+SELECT format(
+    'REVOKE ALL PRIVILEGES ON TABLE reddiff.__historial_migraciones FROM %I',
+    :'usuario_aplicacion')
+WHERE to_regclass('reddiff.__historial_migraciones') IS NOT NULL
 \gexec
 
 SELECT format(

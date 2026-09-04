@@ -4,4 +4,6 @@ Scripts auxiliares que se montan en el contenedor para realizar comprobaciones s
 
 Estos archivos no forman parte de la inicialización automática de PostgreSQL.
 
-`configurar-usuario-aplicacion.sql` crea o actualiza de forma idempotente el usuario de ejecución de la API. Este usuario recibe acceso al esquema `reddiff` y permisos de lectura y escritura, pero no puede crear bases de datos, roles ni esquemas.
+`configurar-usuario-aplicacion.sql` crea o actualiza de forma idempotente el usuario de ejecución de la API. Este usuario recibe acceso al esquema `reddiff` y permisos de lectura y escritura, pero no puede crear bases de datos, roles ni esquemas ni consultar o alterar el historial de migraciones.
+
+`verificar-usuario-aplicacion.sql` comprueba la conexión y confirma que la cuenta no conserve privilegios administrativos, capacidad de creación ni acceso al historial de migraciones.

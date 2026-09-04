@@ -16,7 +16,7 @@ Desde la raíz del repositorio:
 
 El procedimiento genera, si hace falta, una contraseña independiente, actualiza de forma idempotente el rol `reddiff_app` y comprueba una conexión real. No elimina el volumen ni muestra secretos.
 
-La cuenta resultante puede conectarse y modificar datos dentro del esquema `reddiff`, pero no puede crear roles, bases de datos ni esquemas. Las migraciones utilizarán otra identidad.
+La cuenta resultante puede conectarse y modificar datos de aplicación dentro del esquema `reddiff`, pero no puede crear roles, bases de datos ni esquemas ni acceder al historial de migraciones. Las migraciones utilizarán otra identidad.
 
 ## Restaurar herramientas y dependencias
 

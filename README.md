@@ -2,7 +2,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica del proyecto. La solución aún no debe utilizarse en producción.
+> Estado actual: cimentación técnica y modelo de dominio en construcción. La solución aún no debe utilizarse en producción.
 
 ## Tecnologías principales
 

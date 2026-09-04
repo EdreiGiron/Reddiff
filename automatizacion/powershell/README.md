@@ -12,3 +12,4 @@ Los archivos se guardan como UTF-8 con BOM porque Windows PowerShell 5.1 necesit
 | `Verificar-Infraestructura.ps1` | Comprobar el contenedor y ejecutar una consulta real en PostgreSQL. |
 | `Detener-Infraestructura.ps1` | Detener servicios conservando datos o, con una opción explícita, eliminar el volumen local. |
 | `Iniciar-Api.ps1` | Cargar temporalmente el secreto local e iniciar la API sin escribir credenciales en el repositorio. |
+| `Preparar-MigracionInicial.ps1` | Generar la migración inicial y un script SQL idempotente para revisión, sin modificar la base de datos. |

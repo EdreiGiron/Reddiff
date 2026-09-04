@@ -7,3 +7,4 @@ Las migraciones ejecutables pertenecen al proyecto `RedDiff.Infraestructura`; es
 Documentos disponibles:
 
 - [Convenciones de persistencia](convenciones-persistencia.md).
+- [Modelo inicial de datos](modelo-inicial.md).

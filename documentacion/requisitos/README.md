@@ -7,4 +7,4 @@ Esta carpeta contendrá:
 - relación entre requisitos, casos de uso, componentes y pruebas;
 - control de cambios frente al documento del proyecto.
 
-La codificación definitiva de los requisitos se establecerá antes de implementar el primer módulo funcional, evitando asignar identificadores distintos a los utilizados en el documento académico.
+Los requisitos mantienen los identificadores utilizados en el documento académico. La primera relación entre requisitos y entidades se encuentra en [trazabilidad-modelo-datos.md](trazabilidad-modelo-datos.md).
