@@ -78,17 +78,23 @@ El ejemplo mantiene la contraseña únicamente en la sesión actual de PowerShel
 
 ## Endpoints
 
-| Método y ruta | Acceso | Finalidad |
-| --- | --- | --- |
-| `GET /api/autenticacion/proteccion-csrf` | Anónimo | Entregar el token antifalsificación y su cookie asociada. |
-| `POST /api/autenticacion/iniciar-sesion` | Anónimo + CSRF | Validar credenciales y crear la sesión. |
-| `GET /api/autenticacion/sesion` | Autenticado | Consultar la identidad y el rol vigentes. |
-| `POST /api/autenticacion/cerrar-sesion` | Autenticado + CSRF | Auditar y finalizar la sesión. |
-| `GET /api/roles` | Administrador | Listar el catálogo funcional de roles. |
-| `GET /api/usuarios` | Administrador | Listar cuentas sin datos de contraseña. |
-| `GET /api/usuarios/{id}` | Administrador | Consultar una cuenta. |
-| `POST /api/usuarios` | Administrador + CSRF | Crear una cuenta activa. |
-| `PUT /api/usuarios/{id}` | Administrador + CSRF | Cambiar nombre, rol y, opcionalmente, contraseña. |
-| `PATCH /api/usuarios/{id}/estado` | Administrador + CSRF | Activar o desactivar una cuenta. |
+| Método y ruta                            | Acceso               | Finalidad                                                 |
+| ---------------------------------------- | -------------------- | --------------------------------------------------------- |
+| `GET /api/autenticacion/proteccion-csrf` | Anónimo              | Entregar el token antifalsificación y su cookie asociada. |
+| `POST /api/autenticacion/iniciar-sesion` | Anónimo + CSRF       | Validar credenciales y crear la sesión.                   |
+| `GET /api/autenticacion/sesion`          | Autenticado          | Consultar la identidad y el rol vigentes.                 |
+| `POST /api/autenticacion/cerrar-sesion`  | Autenticado + CSRF   | Auditar y finalizar la sesión.                            |
+| `GET /api/roles`                         | Administrador        | Listar el catálogo funcional de roles.                    |
+| `GET /api/usuarios`                      | Administrador        | Listar cuentas sin datos de contraseña.                   |
+| `GET /api/usuarios/{id}`                 | Administrador        | Consultar una cuenta.                                     |
+| `POST /api/usuarios`                     | Administrador + CSRF | Crear una cuenta activa.                                  |
+| `PUT /api/usuarios/{id}`                 | Administrador + CSRF | Cambiar nombre, rol y, opcionalmente, contraseña.         |
+| `PATCH /api/usuarios/{id}/estado`        | Administrador + CSRF | Activar o desactivar una cuenta.                          |
 
 La gestión de permisos arbitrarios queda fuera del alcance: los permisos se expresan mediante los dos roles validados en los casos de uso.
+
+## Integración del cliente web
+
+Angular consume estos endpoints mediante rutas relativas. Un interceptor incluye las cookies en todas las solicitudes de `/api` y obtiene automáticamente un token CSRF antes de cada operación de escritura. El resumen de la sesión se mantiene solo en memoria; las contraseñas y los tokens no se guardan en almacenamiento web.
+
+Los guardianes del cliente evitan navegaciones improcedentes y ocultan la administración al rol `Tecnico`. Estas medidas son de experiencia de usuario: las políticas de la API siguen siendo el control de autorización definitivo. La validación manual se describe en [cliente web local](../operacion/cliente-web-local.md).

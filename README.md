@@ -2,7 +2,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica, modelo persistente e identidad inicial implementados. La solución aún no debe utilizarse en producción.
+> Estado actual: cimentación técnica, modelo persistente, identidad y acceso web administrativo implementados. La solución aún no debe utilizarse en producción.
 
 ## Tecnologías principales
 
@@ -86,6 +86,18 @@ Comprobaciones disponibles:
 Consulte [documentacion/operacion/api-local.md](documentacion/operacion/api-local.md) para conocer el procedimiento completo.
 
 La autenticación utiliza una sesión web cifrada y autorización mediante los roles `Administrador` y `Tecnico`. Consulte [documentacion/seguridad/autenticacion-y-autorizacion.md](documentacion/seguridad/autenticacion-y-autorizacion.md).
+
+## Cliente web local
+
+Con la API activa en `http://localhost:5088`, inicie Angular en otra terminal:
+
+```powershell
+Set-Location .\cliente
+npm ci
+npm start
+```
+
+Abra `http://localhost:4200`. El proxy de desarrollo dirige `/api` y `/salud` a la API sin almacenar credenciales ni tokens en el navegador. Consulte [documentacion/operacion/cliente-web-local.md](documentacion/operacion/cliente-web-local.md).
 
 ## Convenciones esenciales
 

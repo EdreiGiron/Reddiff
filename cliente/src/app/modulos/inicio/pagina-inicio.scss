@@ -2,43 +2,219 @@
   display: block;
 }
 
-.presentacion {
-  display: grid;
-  min-height: 100dvh;
-  padding: 2rem;
-  place-items: center;
-  background: linear-gradient(145deg, #edf4f8 0%, #dceaf2 100%);
+.pagina {
+  width: min(100%, 78rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2.5rem);
 }
 
-.presentacion__contenido {
-  width: min(100%, 48rem);
-  padding: clamp(2rem, 6vw, 4rem);
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #c8d9e4;
-  border-radius: 1rem;
-  box-shadow: 0 1.25rem 3rem rgba(18, 59, 93, 0.12);
+.bienvenida {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
 }
 
-.presentacion__marca {
-  margin: 0 0 0.75rem;
-  color: #176b87;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+.sobrelinea {
+  margin: 0 0 0.45rem;
+  color: #167c75;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+h1,
+h2 {
+  color: #123b50;
+  letter-spacing: -0.025em;
 }
 
 h1 {
   margin: 0;
-  color: #123b5d;
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 5vw, 3.25rem);
   line-height: 1.08;
 }
 
-.presentacion__descripcion {
-  max-width: 40rem;
-  margin: 1.25rem 0 0;
-  color: #40566b;
-  font-size: 1.125rem;
+.bienvenida p:last-child {
+  max-width: 43rem;
+  margin: 0.9rem 0 0;
+  color: #5d727d;
+  font-size: 1.02rem;
   line-height: 1.65;
+}
+
+.insignia {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.75rem;
+  color: #12635f;
+  background: #e1f4f0;
+  border: 1px solid #b9e1da;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.estado {
+  display: flex;
+  margin-top: 2.25rem;
+  padding: 1rem 1.15rem;
+  align-items: center;
+  gap: 0.85rem;
+  background: #ffffff;
+  border: 1px solid #d7e1e5;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.35rem 1rem rgba(19, 59, 78, 0.04);
+}
+
+.estado__indicador {
+  width: 0.65rem;
+  height: 0.65rem;
+  flex: 0 0 auto;
+  background: #25a077;
+  border: 3px solid #d8f1e7;
+  border-radius: 50%;
+  box-sizing: content-box;
+}
+
+.estado strong {
+  color: #23414f;
+  font-size: 0.9rem;
+}
+
+.estado p {
+  margin: 0.2rem 0 0;
+  color: #70818a;
+  font-size: 0.8rem;
+}
+
+.acciones {
+  margin-top: 3.25rem;
+}
+
+.acciones__encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.acciones__encabezado > p {
+  margin: 0;
+  color: #71838c;
+  font-size: 0.85rem;
+}
+
+.tarjetas {
+  display: grid;
+  margin-top: 1.25rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.tarjeta {
+  position: relative;
+  display: grid;
+  min-height: 9rem;
+  padding: 1.2rem;
+  grid-template-columns: auto 1fr;
+  align-content: start;
+  gap: 0.9rem;
+  color: #48606c;
+  background: #f8fafb;
+  border: 1px solid #dce4e7;
+  border-radius: 0.8rem;
+  text-decoration: none;
+}
+
+.tarjeta--disponible {
+  color: #304d5b;
+  background: #ffffff;
+  border-color: #c8dadf;
+  box-shadow: 0 0.45rem 1.2rem rgba(18, 59, 78, 0.06);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.tarjeta--disponible:hover,
+.tarjeta--disponible:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 0.75rem 1.6rem rgba(18, 59, 78, 0.1);
+}
+
+.tarjeta__icono {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  place-items: center;
+  color: #176f70;
+  background: #e2f3f0;
+  border-radius: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.tarjeta strong,
+.tarjeta small {
+  display: block;
+}
+
+.tarjeta strong {
+  margin-top: 0.15rem;
+  color: #23414f;
+  font-size: 0.94rem;
+}
+
+.tarjeta small {
+  margin-top: 0.45rem;
+  color: #70818a;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.tarjeta__accion {
+  position: absolute;
+  right: 1.2rem;
+  bottom: 1rem;
+  color: #167c75;
+  font-size: 1.2rem;
+}
+
+.proximamente {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  color: #7b8b93;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 54rem) {
+  .tarjetas {
+    grid-template-columns: 1fr;
+  }
+
+  .tarjeta {
+    min-height: 7.5rem;
+  }
+}
+
+@media (max-width: 38rem) {
+  .bienvenida,
+  .acciones__encabezado {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .insignia {
+    justify-self: start;
+  }
 }

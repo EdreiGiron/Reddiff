@@ -1,0 +1,62 @@
+<header class="barra-superior">
+  <a class="marca" routerLink="/" (click)="cerrarMenu()" aria-label="RedDiff, ir al inicio">
+    <span class="marca__simbolo" aria-hidden="true">RD</span>
+    <span>
+      <strong>RedDiff</strong>
+      <small>Control de configuraciones</small>
+    </span>
+  </a>
+
+  <button
+    class="boton-menu"
+    type="button"
+    (click)="alternarMenu()"
+    [attr.aria-expanded]="menuAbierto()"
+    aria-controls="navegacion-principal"
+  >
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+    <span aria-hidden="true"></span>
+    <span class="solo-lectura">Abrir navegación</span>
+  </button>
+
+  <div id="navegacion-principal" class="navegacion" [class.navegacion--abierta]="menuAbierto()">
+    <nav aria-label="Navegación principal">
+      <a
+        routerLink="/"
+        routerLinkActive="enlace-activo"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="cerrarMenu()"
+      >
+        Inicio
+      </a>
+      @if (servicioSesion.esAdministrador()) {
+        <a routerLink="/usuarios" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
+          Usuarios
+        </a>
+      }
+    </nav>
+
+    <div class="cuenta">
+      <span class="cuenta__avatar" aria-hidden="true">
+        {{ servicioSesion.sesion()?.nombreUsuario.charAt(0).toUpperCase() }}
+      </span>
+      <span class="cuenta__datos">
+        <strong>{{ servicioSesion.sesion()?.nombreUsuario }}</strong>
+        <small>{{ servicioSesion.sesion()?.rol }}</small>
+      </span>
+      <button
+        class="boton-salir"
+        type="button"
+        (click)="cerrarSesion()"
+        [disabled]="cerrandoSesion()"
+      >
+        {{ cerrandoSesion() ? 'Cerrando…' : 'Cerrar sesión' }}
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido-principal" class="contenido-principal" tabindex="-1">
+  <router-outlet />
+</main>

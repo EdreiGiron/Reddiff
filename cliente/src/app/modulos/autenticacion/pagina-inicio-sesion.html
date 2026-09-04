@@ -1,0 +1,76 @@
+<main id="contenido-principal" class="pagina-acceso" tabindex="-1">
+  <section class="contexto" aria-labelledby="titulo-contexto">
+    <div class="contexto__contenido">
+      <p class="marca"><span aria-hidden="true">RD</span> RedDiff</p>
+      <h1 id="titulo-contexto">Configuraciones de red bajo control.</h1>
+      <p>Centraliza capturas, versiones y comparaciones con acceso protegido para cada rol.</p>
+      <ul aria-label="Características de seguridad">
+        <li><span aria-hidden="true">✓</span> Sesión cifrada y de duración limitada</li>
+        <li><span aria-hidden="true">✓</span> Acciones administrativas auditables</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="acceso" aria-labelledby="titulo-acceso">
+    <form [formGroup]="formulario" (ngSubmit)="iniciarSesion()" novalidate>
+      <div class="acceso__encabezado">
+        <p class="sobrelinea">Acceso al sistema</p>
+        <h2 id="titulo-acceso">Iniciar sesión</h2>
+        <p>Ingresa las credenciales asignadas por el administrador.</p>
+      </div>
+
+      @if (rutaActualizada) {
+        <div class="alerta alerta--informativa" role="status">
+          La cuenta fue actualizada. Inicia sesión nuevamente con tus credenciales vigentes.
+        </div>
+      }
+
+      @if (mensajeError()) {
+        <div class="alerta alerta--error" role="alert">
+          {{ mensajeError() }}
+        </div>
+      }
+
+      <label for="nombre-usuario">Nombre de usuario</label>
+      <input
+        id="nombre-usuario"
+        type="text"
+        formControlName="nombreUsuario"
+        autocomplete="username"
+        autocapitalize="none"
+        spellcheck="false"
+        [attr.aria-invalid]="
+          formulario.controls.nombreUsuario.touched && formulario.controls.nombreUsuario.invalid
+        "
+      />
+      @if (formulario.controls.nombreUsuario.touched && formulario.controls.nombreUsuario.invalid) {
+        <p class="mensaje-campo">Ingresa un nombre de usuario válido.</p>
+      }
+
+      <div class="etiqueta-contrasena">
+        <label for="contrasena">Contraseña</label>
+        <button type="button" (click)="alternarVisibilidadContrasena()">
+          {{ mostrarContrasena() ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+      <input
+        id="contrasena"
+        [type]="mostrarContrasena() ? 'text' : 'password'"
+        formControlName="contrasena"
+        autocomplete="current-password"
+        [attr.aria-invalid]="
+          formulario.controls.contrasena.touched && formulario.controls.contrasena.invalid
+        "
+      />
+      @if (formulario.controls.contrasena.touched && formulario.controls.contrasena.invalid) {
+        <p class="mensaje-campo">La contraseña debe tener al menos 12 caracteres.</p>
+      }
+
+      <button class="boton-principal" type="submit" [disabled]="enviando()">
+        {{ enviando() ? 'Verificando…' : 'Ingresar' }}
+      </button>
+
+      <p class="ayuda">Si no puedes ingresar, solicita apoyo al administrador del sistema.</p>
+    </form>
+  </section>
+</main>

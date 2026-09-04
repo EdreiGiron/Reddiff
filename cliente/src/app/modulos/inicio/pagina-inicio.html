@@ -1,9 +1,61 @@
-<section class="presentacion" aria-labelledby="titulo-principal">
-  <div class="presentacion__contenido">
-    <p class="presentacion__marca">RedDiff</p>
-    <h1 id="titulo-principal">Gestión y versionado de configuraciones Cisco</h1>
-    <p class="presentacion__descripcion">
-      La estructura inicial del cliente se encuentra configurada correctamente.
-    </p>
+<section class="pagina" aria-labelledby="titulo-principal">
+  <header class="bienvenida">
+    <div>
+      <p class="sobrelinea">Panel principal</p>
+      <h1 id="titulo-principal">Bienvenido, {{ servicioSesion.sesion()?.nombreUsuario }}</h1>
+      <p>
+        El sistema está preparado para administrar el ciclo de vida de las configuraciones de red.
+      </p>
+    </div>
+    <span class="insignia">{{ servicioSesion.sesion()?.rol }}</span>
+  </header>
+
+  <div class="estado" role="status">
+    <span class="estado__indicador" aria-hidden="true"></span>
+    <div>
+      <strong>Sesión protegida y activa</strong>
+      <p>Las operaciones disponibles se mostrarán de acuerdo con tu rol.</p>
+    </div>
   </div>
+
+  <section class="acciones" aria-labelledby="titulo-acciones">
+    <div class="acciones__encabezado">
+      <div>
+        <p class="sobrelinea">Espacio de trabajo</p>
+        <h2 id="titulo-acciones">Funciones del sistema</h2>
+      </div>
+      <p>Los módulos operativos se habilitarán progresivamente.</p>
+    </div>
+
+    <div class="tarjetas">
+      @if (servicioSesion.esAdministrador()) {
+        <a class="tarjeta tarjeta--disponible" routerLink="/usuarios">
+          <span class="tarjeta__icono" aria-hidden="true">U</span>
+          <span>
+            <strong>Usuarios y roles</strong>
+            <small>Administra el acceso del equipo al sistema.</small>
+          </span>
+          <span class="tarjeta__accion" aria-hidden="true">→</span>
+        </a>
+      }
+
+      <article class="tarjeta" aria-label="Inventario de dispositivos, próximamente">
+        <span class="tarjeta__icono" aria-hidden="true">D</span>
+        <span>
+          <strong>Dispositivos</strong>
+          <small>Inventario y datos de conexión.</small>
+        </span>
+        <span class="proximamente">Próximamente</span>
+      </article>
+
+      <article class="tarjeta" aria-label="Capturas y versiones, próximamente">
+        <span class="tarjeta__icono" aria-hidden="true">C</span>
+        <span>
+          <strong>Capturas y versiones</strong>
+          <small>Evidencia histórica de configuraciones.</small>
+        </span>
+        <span class="proximamente">Próximamente</span>
+      </article>
+    </div>
+  </section>
 </section>

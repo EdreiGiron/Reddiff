@@ -1,11 +1,40 @@
 import { Routes } from '@angular/router';
+import { guardianAdministrador } from './nucleo/identidad/guardian-administrador';
+import { guardianAutenticacion } from './nucleo/identidad/guardian-autenticacion';
+import { guardianInvitado } from './nucleo/identidad/guardian-invitado';
 
 export const rutasAplicacion: Routes = [
   {
-    path: '',
+    path: 'iniciar-sesion',
+    canActivate: [guardianInvitado],
     loadComponent: () =>
-      import('./modulos/inicio/pagina-inicio').then((modulo) => modulo.PaginaInicio),
-    title: 'RedDiff | Inicio',
+      import('./modulos/autenticacion/pagina-inicio-sesion').then(
+        (modulo) => modulo.PaginaInicioSesion,
+      ),
+    title: 'RedDiff | Iniciar sesión',
+  },
+  {
+    path: '',
+    canActivate: [guardianAutenticacion],
+    loadComponent: () =>
+      import('./compartido/disposicion/disposicion-autenticada').then(
+        (modulo) => modulo.DisposicionAutenticada,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./modulos/inicio/pagina-inicio').then((modulo) => modulo.PaginaInicio),
+        title: 'RedDiff | Inicio',
+      },
+      {
+        path: 'usuarios',
+        canActivate: [guardianAdministrador],
+        loadComponent: () =>
+          import('./modulos/usuarios/pagina-usuarios').then((modulo) => modulo.PaginaUsuarios),
+        title: 'RedDiff | Usuarios',
+      },
+    ],
   },
   {
     path: '**',

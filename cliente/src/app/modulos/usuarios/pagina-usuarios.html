@@ -1,0 +1,252 @@
+<section class="pagina" aria-labelledby="titulo-usuarios">
+  <header class="encabezado">
+    <div>
+      <p class="sobrelinea">Administración</p>
+      <h1 id="titulo-usuarios">Usuarios y roles</h1>
+      <p>Controla quién puede ingresar y qué funciones tiene disponibles.</p>
+    </div>
+    <button class="boton boton--primario" type="button" (click)="abrirNuevoUsuario()">
+      <span aria-hidden="true">+</span> Nuevo usuario
+    </button>
+  </header>
+
+  <div class="resumen" aria-label="Resumen de usuarios">
+    <div>
+      <span>Total</span>
+      <strong>{{ usuarios().length }}</strong>
+    </div>
+    <div>
+      <span>Activos</span>
+      <strong>{{ totalActivos() }}</strong>
+    </div>
+  </div>
+
+  @if (mensajeExito()) {
+    <div class="alerta alerta--exito" role="status">
+      <span aria-hidden="true">✓</span> {{ mensajeExito() }}
+    </div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alerta alerta--error" role="alert">
+      <span>{{ mensajeError() }}</span>
+      @if (!usuarios().length && !cargando()) {
+        <button type="button" (click)="reintentarCarga()">Reintentar</button>
+      }
+    </div>
+  }
+
+  <div class="panel-tabla">
+    @if (cargando()) {
+      <div class="estado-vacio" role="status">
+        <span class="cargador" aria-hidden="true"></span>
+        <p>Cargando usuarios…</p>
+      </div>
+    } @else if (usuarios().length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Usuario</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="solo-lectura">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (usuario of usuarios(); track usuario.id) {
+              <tr>
+                <td data-label="Usuario">
+                  <span class="avatar" aria-hidden="true">
+                    {{ usuario.nombreUsuario.charAt(0).toUpperCase() }}
+                  </span>
+                  <span class="identidad">
+                    <strong>{{ usuario.nombreUsuario }}</strong>
+                    @if (usuario.id === servicioSesion.sesion()?.usuarioId) {
+                      <small>Sesión actual</small>
+                    }
+                  </span>
+                </td>
+                <td data-label="Rol">{{ usuario.rol }}</td>
+                <td data-label="Estado">
+                  <span class="estado" [class.estado--inactivo]="!usuario.activo">
+                    <span aria-hidden="true"></span>
+                    {{ usuario.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="acciones-fila">
+                  <button type="button" (click)="abrirEdicion(usuario)">Editar</button>
+                  <button
+                    type="button"
+                    (click)="solicitarCambioEstado(usuario)"
+                    [disabled]="usuario.id === servicioSesion.sesion()?.usuarioId && usuario.activo"
+                    [attr.title]="
+                      usuario.id === servicioSesion.sesion()?.usuarioId && usuario.activo
+                        ? 'No puedes desactivar tu propia sesión'
+                        : null
+                    "
+                  >
+                    {{ usuario.activo ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!mensajeError()) {
+      <div class="estado-vacio">
+        <strong>No hay usuarios registrados</strong>
+        <p>Crea el primer usuario para comenzar.</p>
+      </div>
+    }
+  </div>
+</section>
+
+@if (formularioVisible()) {
+  <div class="capa-dialogo">
+    <section
+      class="dialogo"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-formulario-usuario"
+    >
+      <header class="dialogo__encabezado">
+        <div>
+          <p class="sobrelinea">{{ usuarioEditado() ? 'Editar acceso' : 'Nuevo acceso' }}</p>
+          <h2 id="titulo-formulario-usuario">
+            {{ usuarioEditado() ? 'Actualizar usuario' : 'Crear usuario' }}
+          </h2>
+        </div>
+        <button
+          class="boton-cerrar"
+          type="button"
+          (click)="cerrarFormulario()"
+          aria-label="Cerrar formulario"
+        >
+          ×
+        </button>
+      </header>
+
+      <form [formGroup]="formulario" (ngSubmit)="guardarUsuario()" novalidate>
+        @if (mensajeError()) {
+          <div class="alerta alerta--error" role="alert">{{ mensajeError() }}</div>
+        }
+
+        <label for="usuario-nombre">Nombre de usuario</label>
+        <input
+          id="usuario-nombre"
+          type="text"
+          formControlName="nombreUsuario"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          [attr.aria-invalid]="
+            formulario.controls.nombreUsuario.touched && formulario.controls.nombreUsuario.invalid
+          "
+        />
+        @if (
+          formulario.controls.nombreUsuario.touched && formulario.controls.nombreUsuario.invalid
+        ) {
+          <p class="mensaje-campo">
+            Usa entre 3 y 100 letras, números, puntos, guiones o guiones bajos.
+          </p>
+        }
+
+        <label for="usuario-rol">Rol</label>
+        <select
+          id="usuario-rol"
+          formControlName="rolId"
+          [attr.aria-invalid]="
+            formulario.controls.rolId.touched && formulario.controls.rolId.invalid
+          "
+        >
+          <option [ngValue]="0" disabled>Selecciona un rol</option>
+          @for (rol of roles(); track rol.id) {
+            @if (rol.activo || rol.id === usuarioEditado()?.rolId) {
+              <option [ngValue]="rol.id">{{ rol.nombre }}</option>
+            }
+          }
+        </select>
+        @if (formulario.controls.rolId.disabled) {
+          <p class="ayuda-campo">No puedes retirar el rol de tu propia sesión.</p>
+        }
+        @if (formulario.controls.rolId.touched && formulario.controls.rolId.invalid) {
+          <p class="mensaje-campo">Selecciona un rol.</p>
+        }
+
+        <label for="usuario-contrasena">
+          {{ usuarioEditado() ? 'Nueva contraseña (opcional)' : 'Contraseña temporal' }}
+        </label>
+        <input
+          id="usuario-contrasena"
+          type="password"
+          formControlName="contrasena"
+          autocomplete="new-password"
+          [attr.aria-invalid]="
+            formulario.controls.contrasena.touched && formulario.controls.contrasena.invalid
+          "
+        />
+        <p class="ayuda-campo">
+          {{
+            usuarioEditado()
+              ? 'Déjala vacía para conservar la contraseña actual.'
+              : 'Debe contener entre 12 y 128 caracteres.'
+          }}
+        </p>
+        @if (formulario.controls.contrasena.touched && formulario.controls.contrasena.invalid) {
+          <p class="mensaje-campo">Ingresa una contraseña de al menos 12 caracteres.</p>
+        }
+
+        <footer class="dialogo__acciones">
+          <button class="boton boton--secundario" type="button" (click)="cerrarFormulario()">
+            Cancelar
+          </button>
+          <button class="boton boton--primario" type="submit" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar usuario' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (usuarioPorCambiar(); as usuario) {
+  <div class="capa-dialogo">
+    <section
+      class="dialogo dialogo--confirmacion"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="titulo-confirmacion"
+      aria-describedby="detalle-confirmacion"
+    >
+      <span class="icono-confirmacion" aria-hidden="true">!</span>
+      <h2 id="titulo-confirmacion">
+        {{ usuario.activo ? '¿Desactivar usuario?' : '¿Activar usuario?' }}
+      </h2>
+      <p id="detalle-confirmacion">
+        @if (usuario.activo) {
+          <strong>{{ usuario.nombreUsuario }}</strong> perderá el acceso y cualquier sesión activa
+          dejará de ser válida.
+        } @else {
+          <strong>{{ usuario.nombreUsuario }}</strong> podrá volver a iniciar sesión.
+        }
+      </p>
+      <footer class="dialogo__acciones">
+        <button class="boton boton--secundario" type="button" (click)="cancelarCambioEstado()">
+          Cancelar
+        </button>
+        <button
+          class="boton"
+          [class.boton--peligro]="usuario.activo"
+          [class.boton--primario]="!usuario.activo"
+          type="button"
+          (click)="confirmarCambioEstado()"
+          [disabled]="cambiandoEstado()"
+        >
+          {{ cambiandoEstado() ? 'Aplicando…' : usuario.activo ? 'Desactivar' : 'Activar' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}

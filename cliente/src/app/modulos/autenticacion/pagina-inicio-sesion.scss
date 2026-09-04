@@ -1,0 +1,262 @@
+:host {
+  display: block;
+}
+
+.pagina-acceso {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: minmax(20rem, 1.05fr) minmax(25rem, 0.95fr);
+  background: #f4f7f8;
+}
+
+.contexto {
+  position: relative;
+  display: grid;
+  min-height: 100%;
+  padding: clamp(2rem, 7vw, 6rem);
+  align-items: center;
+  overflow: hidden;
+  color: #eef9f8;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(86, 199, 183, 0.22), transparent 28rem),
+    linear-gradient(145deg, #0b2d42 0%, #114e61 100%);
+}
+
+.contexto::after {
+  position: absolute;
+  right: -9rem;
+  bottom: -9rem;
+  width: 24rem;
+  height: 24rem;
+  border: 1px solid rgba(148, 224, 213, 0.17);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4rem rgba(148, 224, 213, 0.04),
+    0 0 0 8rem rgba(148, 224, 213, 0.025);
+  content: '';
+}
+
+.contexto__contenido {
+  position: relative;
+  z-index: 1;
+  max-width: 39rem;
+}
+
+.marca {
+  display: flex;
+  margin: 0 0 clamp(3rem, 8vh, 6rem);
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+}
+
+.marca span {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  color: #0b2d42;
+  background: #75d9cb;
+  border-radius: 0.65rem;
+  font-size: 0.8rem;
+}
+
+h1 {
+  max-width: 35rem;
+  margin: 0;
+  font-size: clamp(2.3rem, 5vw, 4.4rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+}
+
+.contexto__contenido > p:not(.marca) {
+  max-width: 34rem;
+  margin: 1.5rem 0 0;
+  color: #c0d8df;
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  line-height: 1.7;
+}
+
+ul {
+  display: grid;
+  margin: 2rem 0 0;
+  padding: 0;
+  gap: 0.75rem;
+  color: #d9eaee;
+  list-style: none;
+}
+
+li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+li span {
+  color: #75d9cb;
+  font-weight: 800;
+}
+
+.acceso {
+  display: grid;
+  padding: clamp(1.5rem, 6vw, 5rem);
+  place-items: center;
+}
+
+form {
+  width: min(100%, 28rem);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: #ffffff;
+  border: 1px solid #d9e2e6;
+  border-radius: 1rem;
+  box-shadow: 0 1.2rem 3rem rgba(18, 54, 72, 0.09);
+}
+
+.acceso__encabezado {
+  margin-bottom: 2rem;
+}
+
+.sobrelinea {
+  margin: 0 0 0.45rem;
+  color: #167c75;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+h2 {
+  margin: 0;
+  color: #123b50;
+  font-size: clamp(1.8rem, 4vw, 2.35rem);
+  letter-spacing: -0.02em;
+}
+
+.acceso__encabezado > p:last-child {
+  margin: 0.7rem 0 0;
+  color: #617581;
+  line-height: 1.55;
+}
+
+label {
+  display: block;
+  margin: 1.15rem 0 0.45rem;
+  color: #263f4c;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.85rem;
+  color: #172f3b;
+  background: #fbfcfc;
+  border: 1px solid #b9c8cf;
+  border-radius: 0.55rem;
+  outline: none;
+}
+
+input:focus {
+  border-color: #188e84;
+  box-shadow: 0 0 0 3px rgba(24, 142, 132, 0.13);
+}
+
+input[aria-invalid='true'] {
+  border-color: #b33a45;
+}
+
+.etiqueta-contrasena {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.etiqueta-contrasena button {
+  padding: 0.25rem;
+  color: #176f70;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.mensaje-campo {
+  margin: 0.4rem 0 0;
+  color: #9c2734;
+  font-size: 0.78rem;
+}
+
+.alerta {
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.alerta--error {
+  color: #83242d;
+  background: #fff0f1;
+  border: 1px solid #efc2c6;
+}
+
+.alerta--informativa {
+  color: #315e72;
+  background: #edf7fa;
+  border: 1px solid #c6e1e9;
+}
+
+.boton-principal {
+  width: 100%;
+  min-height: 3.1rem;
+  margin-top: 1.7rem;
+  color: #ffffff;
+  background: #147f77;
+  border: 1px solid #147f77;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.boton-principal:hover:not(:disabled) {
+  background: #0e6b65;
+}
+
+.boton-principal:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.ayuda {
+  margin: 1.2rem 0 0;
+  color: #71838c;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 52rem) {
+  .pagina-acceso {
+    grid-template-columns: 1fr;
+  }
+
+  .contexto {
+    min-height: auto;
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  .marca {
+    margin-bottom: 2.5rem;
+  }
+
+  .contexto ul {
+    display: none;
+  }
+
+  .acceso {
+    padding: 1.5rem;
+  }
+}

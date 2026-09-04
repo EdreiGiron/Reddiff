@@ -10,12 +10,20 @@ body {
   margin: 0;
 }
 
+html {
+  background: #f4f7f8;
+}
+
 body {
   min-width: 20rem;
   color: #1f2937;
   background: #f4f7f9;
   font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   text-rendering: optimizeLegibility;
+}
+
+body:has(.capa-dialogo) {
+  overflow: hidden;
 }
 
 button,
@@ -27,4 +35,23 @@ textarea {
 
 a {
   color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(72, 184, 171, 0.45);
+  outline-offset: 2px;
+}
+
+.solo-lectura {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

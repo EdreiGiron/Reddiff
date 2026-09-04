@@ -1,59 +1,38 @@
-# ReddiffCliente
+# Cliente web de RedDiff
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.6.
+Aplicación Angular para operar RedDiff desde el navegador. La primera funcionalidad implementada incluye inicio y cierre de sesión, restauración segura de la sesión y administración de usuarios según el rol autenticado.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+- Node.js y npm en las versiones establecidas por el repositorio;
+- API disponible en `http://localhost:5088`;
+- administrador inicial creado mediante los scripts del servidor.
 
-```bash
-ng serve
+## Desarrollo local
+
+Desde la carpeta `cliente`:
+
+```powershell
+npm ci
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Abra `http://localhost:4200`. `proxy.conf.json` redirige las rutas `/api` y `/salud` al servidor local, por lo que el código no contiene direcciones de entornos concretos.
 
-## Code scaffolding
+## Seguridad de la sesión
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- La API conserva la sesión en una cookie cifrada, `HttpOnly` y de duración limitada.
+- El cliente mantiene en memoria únicamente el resumen del usuario autenticado.
+- Las contraseñas no se guardan en `localStorage`, `sessionStorage` ni cookies creadas por Angular.
+- El interceptor solicita la protección CSRF y agrega `X-CSRF-TOKEN` a `POST`, `PUT`, `PATCH` y `DELETE`.
+- Los guardianes de rutas mejoran la navegación, pero la API sigue siendo la autoridad final para autorizar cada operación.
 
-```bash
-ng generate component component-name
+## Validación
+
+```powershell
+npm run build
+npm test -- --watch=false
+npx prettier --check src angular.json proxy.conf.json README.md
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+La compilación de producción mantiene carga diferida para las páginas de acceso, inicio y usuarios.

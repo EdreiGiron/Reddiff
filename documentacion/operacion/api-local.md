@@ -62,3 +62,5 @@ Ambas respuestas deben mostrar `estado` con valor `saludable`. La segunda respon
 Para detener la API, presione `Ctrl+C` en la terminal donde se está ejecutando.
 
 El flujo de sesión y los endpoints administrativos se describen en [autenticación y autorización](../seguridad/autenticacion-y-autorizacion.md).
+
+Después de iniciar y comprobar la API, continúe con la guía del [cliente web local](cliente-web-local.md) para validar el flujo completo desde el navegador.
