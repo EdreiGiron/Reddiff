@@ -77,7 +77,9 @@ public static class ConfiguracionServicios
 
         servicios.AddScoped<IUnidadDeTrabajo>(proveedorServicios =>
             proveedorServicios.GetRequiredService<ContextoRedDiff>());
+        servicios.AddScoped<IRepositorioCapturas, RepositorioCapturas>();
         servicios.AddScoped<IRepositorioDispositivos, RepositorioDispositivos>();
+        servicios.AddScoped<IRepositorioVersionesConfiguracion, RepositorioVersionesConfiguracion>();
         servicios.AddScoped<IRepositorioUsuarios, RepositorioUsuarios>();
         servicios.AddScoped<IRepositorioRoles, RepositorioRoles>();
         servicios.AddScoped<IRepositorioAuditorias, RepositorioAuditorias>();

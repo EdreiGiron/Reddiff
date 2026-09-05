@@ -5,3 +5,5 @@ Aquí se mantendrán el modelo de amenazas, la matriz de riesgos, los controles 
 Como mínimo se analizarán autenticación, autorización por roles, manejo de secretos, acceso de solo lectura a dispositivos, protección de configuraciones, auditoría, validación de entradas, dependencias y seguridad de los contenedores.
 
 La implementación vigente de identidad, sus controles y el contrato protegido se describen en [autenticacion-y-autorizacion.md](autenticacion-y-autorizacion.md).
+
+Las reglas de validación, enmascaramiento y exposición del contenido histórico se describen en [capturas y versiones](../api/capturas-y-versiones.md) y en la [decisión sobre carga controlada](../decisiones/0006-carga-controlada-y-contenido-canonico.md).

@@ -36,6 +36,12 @@ export const rutasAplicacion: Routes = [
         title: 'RedDiff | Dispositivos',
       },
       {
+        path: 'capturas',
+        loadComponent: () =>
+          import('./modulos/capturas/pagina-capturas').then((modulo) => modulo.PaginaCapturas),
+        title: 'RedDiff | Capturas y versiones',
+      },
+      {
         path: 'usuarios',
         canActivate: [guardianAdministrador],
         loadComponent: () =>

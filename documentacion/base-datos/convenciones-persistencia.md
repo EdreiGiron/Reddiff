@@ -23,6 +23,8 @@ Las cadenas de conexión no se guardan en archivos versionados. En desarrollo, `
 
 `EnableSensitiveDataLogging` no debe habilitarse. Los errores públicos y las comprobaciones de salud tampoco deben devolver cadenas de conexión, consultas, nombres de archivos de secretos ni mensajes internos del proveedor.
 
+El contenido de una configuración no se incluirá en listados, errores, auditorías ni registros de diagnóstico. Solo la consulta autenticada del detalle puede devolverlo y debe impedir su almacenamiento en caché.
+
 ## Migraciones
 
 La migración inicial fue revisada, incluida en Git y aplicada explícitamente con la cuenta administradora. Cualquier migración futura deberá seguir el mismo procedimiento de generación, revisión del SQL y aplicación confirmada. La API no aplicará migraciones automáticamente durante su inicio.

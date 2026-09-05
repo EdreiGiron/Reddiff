@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using RedDiff.Aplicacion.Capturas;
 using RedDiff.Aplicacion.Seguridad.Autenticacion;
 using RedDiff.Aplicacion.Seguridad.Inicializacion;
 using RedDiff.Aplicacion.Seguridad.Usuarios;
@@ -24,7 +25,9 @@ builder.Services.AddOpenApi();
 builder.Services.AgregarInfraestructura(builder.Configuration, builder.Environment);
 builder.Services.AgregarSeguridad(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ProcesadorArchivoConfiguracion>();
 builder.Services.AddScoped<ServicioAutenticacion>();
+builder.Services.AddScoped<ServicioCapturasConfiguracion>();
 builder.Services.AddScoped<ServicioGestionDispositivos>();
 builder.Services.AddScoped<ServicioGestionUsuarios>();
 builder.Services.AddScoped<ServicioInicializacionIdentidad>();

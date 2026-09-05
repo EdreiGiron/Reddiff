@@ -4,21 +4,21 @@
 
 El modelo implementa las trece entidades definidas en el diseño académico y prepara la persistencia para los flujos de autenticación, inventario, captura, versionado, comparación, baseline, verificación y auditoría.
 
-| Tabla | Responsabilidad principal |
-| --- | --- |
-| `rol` | Catálogo de funciones asignables a los usuarios. |
-| `usuario` | Cuenta autorizada y hash de su contraseña. |
-| `dispositivo` | Inventario de equipos Cisco o nodos de laboratorio. |
-| `evento_cambio` | Señal SNMP o Syslog validada y deduplicable. |
-| `captura` | Solicitud bajo demanda o iniciada por un evento. |
-| `version_config` | Contenido histórico, metadatos y huella SHA-256. |
-| `baseline` | Referencia aplicable a un dispositivo o tipo de dispositivo. |
-| `regla_baseline` | Criterio individual de una baseline. |
-| `comparacion` | Ejecución entre una versión de origen y una de destino. |
-| `detalle_diferencia` | Evidencia de cada línea agregada, eliminada o modificada. |
-| `verificacion` | Evaluación de una versión contra una baseline. |
-| `resultado_regla` | Estado y evidencia de cada regla evaluada. |
-| `auditoria` | Trazabilidad de acciones y resultados relevantes. |
+| Tabla                | Responsabilidad principal                                    |
+| -------------------- | ------------------------------------------------------------ |
+| `rol`                | Catálogo de funciones asignables a los usuarios.             |
+| `usuario`            | Cuenta autorizada y hash de su contraseña.                   |
+| `dispositivo`        | Inventario de equipos Cisco o nodos de laboratorio.          |
+| `evento_cambio`      | Señal SNMP o Syslog validada y deduplicable.                 |
+| `captura`            | Solicitud bajo demanda o iniciada por un evento.             |
+| `version_config`     | Contenido histórico, metadatos y huella SHA-256.             |
+| `baseline`           | Referencia aplicable a un dispositivo o tipo de dispositivo. |
+| `regla_baseline`     | Criterio individual de una baseline.                         |
+| `comparacion`        | Ejecución entre una versión de origen y una de destino.      |
+| `detalle_diferencia` | Evidencia de cada línea agregada, eliminada o modificada.    |
+| `verificacion`       | Evaluación de una versión contra una baseline.               |
+| `resultado_regla`    | Estado y evidencia de cada regla evaluada.                   |
+| `auditoria`          | Trazabilidad de acciones y resultados relevantes.            |
 
 ## Extensiones justificadas
 
@@ -39,6 +39,8 @@ El diagrama lógico del documento presenta los atributos principales. La impleme
 - La combinación de dispositivo y huella de evento es única para evitar duplicidades.
 - Una captura conserva exclusivamente al usuario solicitante o al evento que la originó, según su disparador.
 - Una captura produce como máximo una versión y el número de versión es único dentro del dispositivo.
+- Las cargas de archivo se guardan como UTF-8 con finales de línea `LF`; la huella SHA-256 corresponde exactamente a ese contenido persistido.
+- Una nueva carga crea otra captura y otro número de versión; nunca actualiza el contenido histórico anterior.
 - Una versión estable debe conservar simultáneamente usuario validador y fecha de validación.
 - Una baseline debe referirse a un dispositivo o a un tipo de dispositivo, nunca a ambos.
 - Una verificación solo puede contener un resultado por regla.

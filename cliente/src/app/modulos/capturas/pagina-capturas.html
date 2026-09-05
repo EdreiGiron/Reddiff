@@ -1,0 +1,275 @@
+<section class="pagina" aria-labelledby="titulo-capturas">
+  <header class="encabezado">
+    <div>
+      <p class="sobrelinea">Evidencia histórica</p>
+      <h1 id="titulo-capturas">Capturas y versiones</h1>
+      <p>Registra configuraciones sin reemplazar versiones anteriores y consulta su integridad.</p>
+    </div>
+    <span class="insignia-seguridad">Solo lectura</span>
+  </header>
+
+  @if (mensajeExito()) {
+    <div class="alerta alerta--exito" role="status">✓ {{ mensajeExito() }}</div>
+  }
+  @if (mensajeError()) {
+    <div class="alerta alerta--error" role="alert">{{ mensajeError() }}</div>
+  }
+
+  <div class="cuadricula-principal">
+    <section class="panel panel--carga" aria-labelledby="titulo-carga">
+      <div class="panel__encabezado">
+        <div>
+          <p class="sobrelinea">Nueva evidencia</p>
+          <h2 id="titulo-carga">Cargar configuración</h2>
+        </div>
+        <span class="icono-archivo" aria-hidden="true">↑</span>
+      </div>
+
+      @if (dispositivosAutorizados().length) {
+        <form [formGroup]="formulario" (ngSubmit)="cargarArchivo()" novalidate>
+          <label class="campo">
+            <span>Dispositivo autorizado</span>
+            <select formControlName="dispositivoId">
+              @for (dispositivo of dispositivosAutorizados(); track dispositivo.id) {
+                <option [ngValue]="dispositivo.id">
+                  {{ dispositivo.nombre }} · {{ dispositivo.host }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label class="selector-archivo" [class.selector-archivo--listo]="archivoSeleccionado()">
+            <input
+              #selectorArchivo
+              type="file"
+              accept=".txt,.cfg,.conf,.config,text/plain"
+              (change)="seleccionarArchivo($event)"
+            />
+            <span class="selector-archivo__icono" aria-hidden="true">CFG</span>
+            <strong>{{ archivoSeleccionado()?.name ?? 'Seleccionar archivo' }}</strong>
+            <small>.txt, .cfg, .conf o .config · máximo 5 MB</small>
+          </label>
+
+          <label class="campo">
+            <span>Comentario (opcional)</span>
+            <textarea
+              formControlName="comentario"
+              rows="3"
+              maxlength="300"
+              placeholder="Motivo o contexto de la captura"
+            ></textarea>
+          </label>
+
+          <div class="nota-seguridad" role="note">
+            <strong>Antes de cargar</strong>
+            <p>
+              Enmascara contraseñas, comunidades y claves con <code>[PROTEGIDO]</code>. El sistema
+              rechazará patrones sensibles visibles.
+            </p>
+          </div>
+
+          <button class="boton boton--primario" type="submit" [disabled]="guardando()">
+            {{ guardando() ? 'Registrando…' : 'Registrar nueva versión' }}
+          </button>
+        </form>
+      } @else if (!cargando()) {
+        <div class="estado-vacio estado-vacio--compacto">
+          <strong>No hay dispositivos autorizados</strong>
+          <p>Solicita que un administrador revise y autorice un equipo del inventario.</p>
+        </div>
+      }
+    </section>
+
+    <section class="panel panel--resumen" aria-label="Resumen de evidencia">
+      <p class="sobrelinea">Estado actual</p>
+      <div class="metricas">
+        <div>
+          <strong>{{ versiones().length }}</strong>
+          <span>Versiones visibles</span>
+        </div>
+        <div>
+          <strong>{{ capturas().length }}</strong>
+          <span>Capturas visibles</span>
+        </div>
+      </div>
+      <p class="explicacion">
+        Cada carga crea una captura completada, una versión consecutiva y una huella SHA-256. El
+        archivo anterior permanece disponible como evidencia.
+      </p>
+    </section>
+  </div>
+
+  <section class="evidencia" aria-labelledby="titulo-evidencia">
+    <header class="evidencia__encabezado">
+      <div>
+        <p class="sobrelinea">Consulta</p>
+        <h2 id="titulo-evidencia">Historial registrado</h2>
+      </div>
+      <label class="filtro">
+        <span>Dispositivo</span>
+        <select [value]="filtroDispositivo()" (change)="cambiarFiltro($event)">
+          <option value="0">Todos</option>
+          @for (dispositivo of dispositivos(); track dispositivo.id) {
+            <option [value]="dispositivo.id">{{ dispositivo.nombre }}</option>
+          }
+        </select>
+      </label>
+    </header>
+
+    <div class="pestanas" role="tablist" aria-label="Tipo de evidencia">
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="vista() === 'versiones'"
+        [class.activa]="vista() === 'versiones'"
+        (click)="cambiarVista('versiones')"
+      >
+        Versiones <span>{{ versiones().length }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="vista() === 'capturas'"
+        [class.activa]="vista() === 'capturas'"
+        (click)="cambiarVista('capturas')"
+      >
+        Capturas <span>{{ capturas().length }}</span>
+      </button>
+    </div>
+
+    @if (cargando()) {
+      <div class="estado-vacio" role="status"><span class="cargador"></span>Cargando…</div>
+    } @else if (vista() === 'versiones' && versiones().length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th>Versión</th>
+              <th>Dispositivo</th>
+              <th>Origen</th>
+              <th>Fecha y usuario</th>
+              <th>Integridad</th>
+              <th><span class="solo-lectura">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (version of versiones(); track version.id) {
+              <tr>
+                <td data-label="Versión">
+                  <strong>v{{ version.numero }}</strong>
+                </td>
+                <td data-label="Dispositivo">{{ version.dispositivo }}</td>
+                <td data-label="Origen">
+                  <span class="etiqueta">{{ etiquetaOrigen(version.origen) }}</span>
+                </td>
+                <td data-label="Fecha y usuario">
+                  <strong>{{ version.capturadaEn | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                  <small>{{ version.usuarioSolicitante ?? 'Proceso del sistema' }}</small>
+                </td>
+                <td data-label="Integridad">
+                  <code [title]="version.hash">{{ abreviarHash(version.hash) }}</code>
+                </td>
+                <td>
+                  <button class="enlace" type="button" (click)="abrirDetalle(version.id)">
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (vista() === 'capturas' && capturas().length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th>Captura</th>
+              <th>Dispositivo</th>
+              <th>Medio</th>
+              <th>Estado</th>
+              <th>Fecha y usuario</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (captura of capturas(); track captura.id) {
+              <tr>
+                <td data-label="Captura">
+                  <strong>#{{ captura.id }}</strong>
+                </td>
+                <td data-label="Dispositivo">{{ captura.dispositivo }}</td>
+                <td data-label="Medio">{{ etiquetaOrigen(captura.medio) }}</td>
+                <td data-label="Estado">
+                  <span class="estado" [attr.data-estado]="captura.estado">{{
+                    captura.estado
+                  }}</span>
+                </td>
+                <td data-label="Fecha y usuario">
+                  <strong>{{ captura.fecha | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                  <small>{{ captura.usuarioSolicitante ?? 'Proceso del sistema' }}</small>
+                </td>
+                <td data-label="Resultado">
+                  @if (captura.versionId) {
+                    <button class="enlace" type="button" (click)="abrirDetalle(captura.versionId)">
+                      Ver versión
+                    </button>
+                  } @else {
+                    <span>{{ captura.error ?? 'Sin versión' }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="estado-vacio">
+        <strong>No hay evidencia para el filtro seleccionado</strong>
+        <p>Carga una configuración válida para crear la primera versión.</p>
+      </div>
+    }
+  </section>
+</section>
+
+@if (versionDetalle(); as version) {
+  <div class="capa-dialogo">
+    <section class="dialogo" role="dialog" aria-modal="true" aria-labelledby="titulo-version">
+      <header class="dialogo__encabezado">
+        <div>
+          <p class="sobrelinea">{{ version.dispositivo }}</p>
+          <h2 id="titulo-version">Versión {{ version.numero }}</h2>
+        </div>
+        <button type="button" class="boton-cerrar" (click)="cerrarDetalle()" aria-label="Cerrar">
+          ×
+        </button>
+      </header>
+      <dl class="metadatos">
+        <div>
+          <dt>Origen</dt>
+          <dd>{{ etiquetaOrigen(version.origen) }}</dd>
+        </div>
+        <div>
+          <dt>Capturada</dt>
+          <dd>{{ version.capturadaEn | date: 'dd/MM/yyyy HH:mm:ss' }}</dd>
+        </div>
+        <div class="metadatos__ancho">
+          <dt>SHA-256</dt>
+          <dd>
+            <code>{{ version.hash }}</code>
+          </dd>
+        </div>
+        @if (version.comentario) {
+          <div class="metadatos__ancho">
+            <dt>Comentario</dt>
+            <dd>{{ version.comentario }}</dd>
+          </div>
+        }
+      </dl>
+      <div class="contenido-configuracion">
+        <div><strong>Contenido preservado</strong><small>Vista de solo lectura</small></div>
+        <pre>{{ version.contenido }}</pre>
+      </div>
+    </section>
+  </div>
+}

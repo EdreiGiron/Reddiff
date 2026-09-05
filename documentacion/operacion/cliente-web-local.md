@@ -2,7 +2,7 @@
 
 ## Alcance
 
-El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente, consultar el inventario y, para el rol `Administrador`, gestionar usuarios y dispositivos. El rol `Tecnico` puede autenticarse, acceder al inicio y consultar los dispositivos, pero no puede modificar el inventario ni abrir la administración de usuarios.
+El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente, consultar el inventario, cargar configuraciones enmascaradas y revisar el historial. El rol `Administrador` también puede gestionar usuarios y dispositivos. El rol `Tecnico` puede operar capturas y consultar los equipos, pero no modificar el inventario ni abrir la administración de usuarios.
 
 ## Requisitos previos
 
@@ -39,12 +39,17 @@ El servidor de desarrollo de Angular utiliza `proxy.conf.json` para reenviar `/a
 4. Cree un usuario de prueba con el rol `Tecnico` y una contraseña temporal de al menos 12 caracteres.
 5. Abra **Dispositivos**, registre un equipo de laboratorio y confirme que comience como **No autorizado**.
 6. Revise sus datos, autorícelo y confirme que el estado cambie sin recargar la página.
-7. Cierre la sesión administrativa e ingrese con el usuario técnico.
-8. Confirme que el usuario técnico vea **Dispositivos**, pero no el enlace **Usuarios** ni controles de modificación del equipo.
-9. Escriba `http://localhost:4200/usuarios` y confirme que el sistema lo devuelva al inicio.
-10. Cierre la sesión técnica, ingrese nuevamente como administrador y desactive la cuenta de prueba.
+7. Prepare un archivo `prueba.cfg` con datos ficticios y sin credenciales, por ejemplo `hostname laboratorio`.
+8. Abra **Capturas**, seleccione el dispositivo autorizado, cargue `prueba.cfg` y confirme que se cree la versión 1.
+9. Abra el detalle, compruebe el contenido, el comentario y la huella SHA-256.
+10. Modifique el archivo con una segunda línea, vuelva a cargarlo y confirme que se cree la versión 2 sin desaparecer la versión 1.
+11. Cierre la sesión administrativa e ingrese con el usuario técnico.
+12. Confirme que el técnico vea **Dispositivos** y **Capturas**, pero no **Usuarios** ni controles de modificación del equipo.
+13. Confirme que el técnico pueda cargar un archivo enmascarado en el dispositivo autorizado.
+14. Escriba `http://localhost:4200/usuarios` y confirme que el sistema lo devuelva al inicio.
+15. Cierre la sesión técnica, ingrese nuevamente como administrador y desactive la cuenta de prueba.
 
-No escriba contraseñas en comandos, capturas de pantalla, documentación o mensajes. El navegador no debe conservarlas después de enviar el formulario.
+No escriba contraseñas en comandos, archivos de configuración, capturas de pantalla, documentación o mensajes. Sustituya todo dato sensible del archivo por `[PROTEGIDO]` antes de cargarlo. El navegador no debe conservar las credenciales de acceso después de enviar el formulario.
 
 ## Validación automatizada
 
@@ -56,7 +61,7 @@ npm test -- --watch=false
 npx prettier --check src angular.json proxy.conf.json README.md
 ```
 
-Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso, la restricción que impide desactivar la propia cuenta y la presentación del inventario según el rol.
+Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso, la restricción que impide desactivar la propia cuenta y la presentación del inventario y del historial según el rol.
 
 ## Solución de problemas
 

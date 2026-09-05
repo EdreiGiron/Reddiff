@@ -33,6 +33,9 @@
       <a routerLink="/dispositivos" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
         Dispositivos
       </a>
+      <a routerLink="/capturas" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
+        Capturas
+      </a>
       @if (servicioSesion.esAdministrador()) {
         <a routerLink="/usuarios" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
           Usuarios
