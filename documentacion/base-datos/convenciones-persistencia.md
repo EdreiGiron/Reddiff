@@ -25,4 +25,4 @@ Las cadenas de conexión no se guardan en archivos versionados. En desarrollo, `
 
 ## Migraciones
 
-La migración inicial se generará después de validar la compilación y las configuraciones del primer modelo. Debe revisarse antes de aplicarse, incluirse en Git y ejecutarse de forma explícita con la cuenta administradora. La API no aplicará migraciones automáticamente durante su inicio.
+La migración inicial fue revisada, incluida en Git y aplicada explícitamente con la cuenta administradora. Cualquier migración futura deberá seguir el mismo procedimiento de generación, revisión del SQL y aplicación confirmada. La API no aplicará migraciones automáticamente durante su inicio.

@@ -1,6 +1,6 @@
 # Cliente web de RedDiff
 
-Aplicación Angular para operar RedDiff desde el navegador. La primera funcionalidad implementada incluye inicio y cierre de sesión, restauración segura de la sesión y administración de usuarios según el rol autenticado.
+Aplicación Angular para operar RedDiff desde el navegador. Incluye inicio y cierre de sesión, restauración segura de la sesión, administración de usuarios e inventario de dispositivos según el rol autenticado.
 
 ## Requisitos
 
@@ -35,4 +35,4 @@ npm test -- --watch=false
 npx prettier --check src angular.json proxy.conf.json README.md
 ```
 
-La compilación de producción mantiene carga diferida para las páginas de acceso, inicio y usuarios.
+La compilación de producción mantiene carga diferida para las páginas de acceso, inicio, usuarios y dispositivos.

@@ -6,4 +6,6 @@ La especificación OpenAPI generada por la aplicación será la fuente principal
 
 Los endpoints iniciales de autenticación, roles y usuarios se documentan en [autenticación y autorización](../seguridad/autenticacion-y-autorizacion.md). Las operaciones que modifican datos requieren sesión y token antifalsificación.
 
+El contrato del inventario y su matriz de permisos se describen en [dispositivos](dispositivos.md).
+
 El cliente consume rutas relativas bajo `/api`. Durante el desarrollo, Angular las dirige a `http://localhost:5088` mediante `cliente/proxy.conf.json`; esta configuración no forma parte de la compilación de producción.

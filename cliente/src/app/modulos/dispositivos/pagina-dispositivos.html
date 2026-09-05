@@ -1,0 +1,351 @@
+<section class="pagina" aria-labelledby="titulo-dispositivos">
+  <header class="encabezado">
+    <div>
+      <p class="sobrelinea">Inventario de red</p>
+      <h1 id="titulo-dispositivos">Dispositivos</h1>
+      <p>Consulta los equipos autorizados y sus canales de comunicación.</p>
+    </div>
+    @if (servicioSesion.esAdministrador()) {
+      <button class="boton boton--primario" type="button" (click)="abrirNuevo()">
+        <span aria-hidden="true">+</span> Nuevo dispositivo
+      </button>
+    }
+  </header>
+
+  <div class="resumen" aria-label="Resumen del inventario">
+    <div>
+      <span>Total registrado</span>
+      <strong>{{ dispositivos().length }}</strong>
+    </div>
+    <div>
+      <span>Autorizados</span>
+      <strong>{{ totalAutorizados() }}</strong>
+    </div>
+    <div class="canales">
+      <span>Canales admitidos</span>
+      <strong>SSH · NETCONF</strong>
+    </div>
+  </div>
+
+  @if (!servicioSesion.esAdministrador()) {
+    <div class="aviso-rol" role="note">
+      <span aria-hidden="true">i</span>
+      <p>
+        Tu rol permite consultar el inventario. Las altas y modificaciones corresponden al
+        administrador.
+      </p>
+    </div>
+  }
+
+  @if (mensajeExito()) {
+    <div class="alerta alerta--exito" role="status">
+      <span aria-hidden="true">✓</span> {{ mensajeExito() }}
+    </div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alerta alerta--error" role="alert">
+      <span>{{ mensajeError() }}</span>
+      @if (!dispositivos().length && !cargando()) {
+        <button type="button" (click)="reintentarCarga()">Reintentar</button>
+      }
+    </div>
+  }
+
+  <div class="herramientas" aria-label="Filtros del inventario">
+    <label class="buscador">
+      <span class="solo-lectura">Buscar dispositivo</span>
+      <span aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        placeholder="Buscar por nombre, host, tipo o modelo"
+        [value]="busqueda()"
+        (input)="actualizarBusqueda($event)"
+      />
+    </label>
+    <label class="filtro-estado">
+      <span>Estado</span>
+      <select [value]="filtroEstado()" (change)="actualizarFiltroEstado($event)">
+        <option value="Todos">Todos</option>
+        <option value="Autorizado">Autorizados</option>
+        <option value="NoAutorizado">No autorizados</option>
+        <option value="Inactivo">Inactivos</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="panel-tabla">
+    @if (cargando()) {
+      <div class="estado-vacio" role="status">
+        <span class="cargador" aria-hidden="true"></span>
+        <p>Cargando inventario…</p>
+      </div>
+    } @else if (dispositivosFiltrados().length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Dispositivo</th>
+              <th scope="col">Conexión</th>
+              <th scope="col">Eventos</th>
+              <th scope="col">Estado</th>
+              @if (servicioSesion.esAdministrador()) {
+                <th scope="col"><span class="solo-lectura">Acciones</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (dispositivo of dispositivosFiltrados(); track dispositivo.id) {
+              <tr>
+                <td data-label="Dispositivo">
+                  <span class="icono-dispositivo" aria-hidden="true">D</span>
+                  <span class="identidad">
+                    <strong>{{ dispositivo.nombre }}</strong>
+                    <small>
+                      {{ dispositivo.tipo }}
+                      @if (dispositivo.modelo) {
+                        · {{ dispositivo.modelo }}
+                      }
+                    </small>
+                  </span>
+                </td>
+                <td data-label="Conexión">
+                  <strong class="dato-monoespaciado"
+                    >{{ dispositivo.host }}:{{ dispositivo.puerto }}</strong
+                  >
+                  <small class="etiqueta-protocolo">{{
+                    etiquetaProtocolo(dispositivo.protocolo)
+                  }}</small>
+                </td>
+                <td data-label="Eventos">{{ etiquetaFuente(dispositivo.fuenteEventos) }}</td>
+                <td data-label="Estado">
+                  <span class="estado" [attr.data-estado]="dispositivo.estado">
+                    <span aria-hidden="true"></span>
+                    {{ etiquetaEstado(dispositivo.estado) }}
+                  </span>
+                </td>
+                @if (servicioSesion.esAdministrador()) {
+                  <td class="acciones-fila">
+                    <button type="button" (click)="abrirEdicion(dispositivo)">Editar</button>
+                    @if (dispositivo.estado === 'NoAutorizado') {
+                      <button type="button" (click)="solicitarCambio(dispositivo, 'Autorizado')">
+                        Autorizar
+                      </button>
+                    }
+                    @if (dispositivo.estado === 'Autorizado') {
+                      <button type="button" (click)="solicitarCambio(dispositivo, 'NoAutorizado')">
+                        Revocar
+                      </button>
+                    }
+                    @if (dispositivo.estado !== 'Inactivo') {
+                      <button type="button" (click)="solicitarCambio(dispositivo, 'Inactivo')">
+                        Desactivar
+                      </button>
+                    } @else {
+                      <button type="button" (click)="solicitarCambio(dispositivo, 'NoAutorizado')">
+                        Reactivar
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (dispositivos().length) {
+      <div class="estado-vacio">
+        <strong>No hay coincidencias</strong>
+        <p>Modifica la búsqueda o el filtro seleccionado.</p>
+      </div>
+    } @else if (!mensajeError()) {
+      <div class="estado-vacio">
+        <strong>No hay dispositivos registrados</strong>
+        <p>
+          {{
+            servicioSesion.esAdministrador()
+              ? 'Registra el primer equipo para comenzar el inventario.'
+              : 'Un administrador debe registrar los equipos de la red.'
+          }}
+        </p>
+      </div>
+    }
+  </div>
+</section>
+
+@if (formularioVisible()) {
+  <div class="capa-dialogo">
+    <section
+      class="dialogo"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="titulo-formulario-dispositivo"
+    >
+      <header class="dialogo__encabezado">
+        <div>
+          <p class="sobrelinea">{{ dispositivoEditado() ? 'Editar equipo' : 'Nuevo equipo' }}</p>
+          <h2 id="titulo-formulario-dispositivo">
+            {{ dispositivoEditado() ? 'Actualizar dispositivo' : 'Registrar dispositivo' }}
+          </h2>
+        </div>
+        <button class="boton-cerrar" type="button" (click)="cerrarFormulario()" aria-label="Cerrar">
+          ×
+        </button>
+      </header>
+
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        @if (mensajeError()) {
+          <div class="alerta alerta--error" role="alert">{{ mensajeError() }}</div>
+        }
+
+        <div class="cuadricula-formulario">
+          <div class="campo campo--ancho">
+            <label for="dispositivo-nombre">Nombre identificador</label>
+            <input
+              id="dispositivo-nombre"
+              type="text"
+              formControlName="nombre"
+              autocomplete="off"
+            />
+            @if (formulario.controls.nombre.touched && formulario.controls.nombre.invalid) {
+              <p class="mensaje-campo">Ingresa un nombre de hasta 120 caracteres.</p>
+            }
+          </div>
+
+          <div class="campo campo--ancho">
+            <label for="dispositivo-host">Host o dirección IP</label>
+            <input
+              id="dispositivo-host"
+              type="text"
+              formControlName="host"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              placeholder="core-01.ejemplo.local"
+            />
+            @if (formulario.controls.host.touched && formulario.controls.host.invalid) {
+              <p class="mensaje-campo">Ingresa un nombre DNS o una dirección IP.</p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="dispositivo-tipo">Tipo</label>
+            <input
+              id="dispositivo-tipo"
+              type="text"
+              formControlName="tipo"
+              autocomplete="off"
+              placeholder="Router o switch"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="dispositivo-modelo">Modelo (opcional)</label>
+            <input
+              id="dispositivo-modelo"
+              type="text"
+              formControlName="modelo"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="campo">
+            <label for="dispositivo-protocolo">Protocolo</label>
+            <select
+              id="dispositivo-protocolo"
+              formControlName="protocolo"
+              (change)="alCambiarProtocolo()"
+            >
+              @for (protocolo of protocolos; track protocolo.valor) {
+                <option [value]="protocolo.valor">{{ protocolo.etiqueta }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="dispositivo-puerto">Puerto</label>
+            <input
+              id="dispositivo-puerto"
+              type="number"
+              formControlName="puerto"
+              min="1"
+              max="65535"
+            />
+            @if (formulario.controls.puerto.touched && formulario.controls.puerto.invalid) {
+              <p class="mensaje-campo">Usa un puerto entre 1 y 65535.</p>
+            }
+          </div>
+
+          <div class="campo campo--ancho">
+            <label for="dispositivo-eventos">Fuente de avisos (opcional)</label>
+            <select id="dispositivo-eventos" formControlName="fuenteEventos">
+              <option value="">Sin recepción automática de avisos</option>
+              @for (fuente of fuentesEventos; track fuente.valor) {
+                <option [value]="fuente.valor">{{ fuente.etiqueta }}</option>
+              }
+            </select>
+            <p class="ayuda-campo">
+              Estos avisos podrán originar una captura posterior; no contienen la configuración.
+            </p>
+          </div>
+        </div>
+
+        <div class="nota-seguridad">
+          <strong>Registro seguro</strong>
+          <p>
+            Las credenciales del equipo no se solicitan en este formulario. Un dispositivo nuevo
+            permanece sin autorización hasta su revisión explícita.
+          </p>
+        </div>
+
+        <footer class="dialogo__acciones">
+          <button class="boton boton--secundario" type="button" (click)="cerrarFormulario()">
+            Cancelar
+          </button>
+          <button class="boton boton--primario" type="submit" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar dispositivo' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (cambioPendiente(); as pendiente) {
+  <div class="capa-dialogo">
+    <section
+      class="dialogo dialogo--confirmacion"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="titulo-cambio-dispositivo"
+      aria-describedby="detalle-cambio-dispositivo"
+    >
+      <span class="icono-confirmacion" aria-hidden="true">!</span>
+      <h2 id="titulo-cambio-dispositivo">{{ tituloCambio(pendiente) }}</h2>
+      <p id="detalle-cambio-dispositivo">
+        El nuevo estado será <strong>{{ etiquetaEstado(pendiente.estado) }}</strong
+        >. El cambio quedará registrado en la auditoría del sistema.
+      </p>
+      @if (pendiente.estado === 'Autorizado') {
+        <p class="advertencia-confirmacion">
+          Confirma que el host, puerto y protocolo fueron revisados antes de autorizarlo.
+        </p>
+      }
+      <footer class="dialogo__acciones">
+        <button class="boton boton--secundario" type="button" (click)="cancelarCambio()">
+          Cancelar
+        </button>
+        <button
+          class="boton"
+          [class.boton--peligro]="pendiente.estado === 'Inactivo'"
+          [class.boton--primario]="pendiente.estado !== 'Inactivo'"
+          type="button"
+          (click)="confirmarCambio()"
+          [disabled]="cambiandoEstado()"
+        >
+          {{ cambiandoEstado() ? 'Aplicando…' : 'Confirmar cambio' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}

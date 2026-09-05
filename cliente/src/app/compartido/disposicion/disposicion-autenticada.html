@@ -30,6 +30,9 @@
       >
         Inicio
       </a>
+      <a routerLink="/dispositivos" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
+        Dispositivos
+      </a>
       @if (servicioSesion.esAdministrador()) {
         <a routerLink="/usuarios" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
           Usuarios

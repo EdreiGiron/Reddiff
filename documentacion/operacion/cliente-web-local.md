@@ -2,7 +2,7 @@
 
 ## Alcance
 
-El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente y, para el rol `Administrador`, listar, crear, editar, activar y desactivar usuarios. El rol `Tecnico` puede autenticarse y acceder al inicio, pero no ve ni puede abrir la administración de usuarios.
+El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente, consultar el inventario y, para el rol `Administrador`, gestionar usuarios y dispositivos. El rol `Tecnico` puede autenticarse, acceder al inicio y consultar los dispositivos, pero no puede modificar el inventario ni abrir la administración de usuarios.
 
 ## Requisitos previos
 
@@ -37,10 +37,12 @@ El servidor de desarrollo de Angular utiliza `proxy.conf.json` para reenviar `/a
 2. Confirme que la cabecera muestre el usuario y el rol `Administrador`.
 3. Abra **Usuarios** y compruebe que aparece la cuenta administrativa.
 4. Cree un usuario de prueba con el rol `Tecnico` y una contraseña temporal de al menos 12 caracteres.
-5. Cierre la sesión administrativa e ingrese con el usuario técnico.
-6. Confirme que el usuario técnico no vea el enlace **Usuarios**.
-7. Escriba `http://localhost:4200/usuarios` y confirme que el sistema lo devuelva al inicio.
-8. Cierre la sesión técnica, ingrese nuevamente como administrador y desactive la cuenta de prueba.
+5. Abra **Dispositivos**, registre un equipo de laboratorio y confirme que comience como **No autorizado**.
+6. Revise sus datos, autorícelo y confirme que el estado cambie sin recargar la página.
+7. Cierre la sesión administrativa e ingrese con el usuario técnico.
+8. Confirme que el usuario técnico vea **Dispositivos**, pero no el enlace **Usuarios** ni controles de modificación del equipo.
+9. Escriba `http://localhost:4200/usuarios` y confirme que el sistema lo devuelva al inicio.
+10. Cierre la sesión técnica, ingrese nuevamente como administrador y desactive la cuenta de prueba.
 
 No escriba contraseñas en comandos, capturas de pantalla, documentación o mensajes. El navegador no debe conservarlas después de enviar el formulario.
 
@@ -54,7 +56,7 @@ npm test -- --watch=false
 npx prettier --check src angular.json proxy.conf.json README.md
 ```
 
-Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso y la restricción que impide desactivar la propia cuenta.
+Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso, la restricción que impide desactivar la propia cuenta y la presentación del inventario según el rol.
 
 ## Solución de problemas
 

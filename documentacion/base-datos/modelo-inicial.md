@@ -35,6 +35,7 @@ El diagrama lógico del documento presenta los atributos principales. La impleme
 - Los identificadores utilizan `bigint` generado por PostgreSQL.
 - Las fechas se guardan como `timestamp with time zone` y el dominio las normaliza a UTC.
 - Las huellas de eventos y versiones deben ser valores SHA-256 hexadecimales de 64 caracteres.
+- Los dispositivos normalizan nombres DNS y direcciones IP, admiten únicamente SSH o NETCONF como protocolo de captura remota y aceptan SNMP trap, SNMP inform o Syslog como fuente de avisos.
 - La combinación de dispositivo y huella de evento es única para evitar duplicidades.
 - Una captura conserva exclusivamente al usuario solicitante o al evento que la originó, según su disparador.
 - Una captura produce como máximo una versión y el número de versión es único dentro del dispositivo.

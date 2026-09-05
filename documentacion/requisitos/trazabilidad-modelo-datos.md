@@ -6,7 +6,7 @@ Esta matriz relaciona la primera implementación del dominio con los requerimien
 | --- | --- | --- |
 | RF-01 | `usuario`, `rol`, `auditoria` | Cuenta activa, hash PBKDF2, sesión cifrada, validación de vigencia y auditoría de accesos. |
 | RF-02 | `usuario`, `rol`, `auditoria` | API administrativa para crear, consultar, modificar, activar y desactivar cuentas y asignar roles. |
-| RF-03 | `dispositivo` | Nombre, host, tipo, modelo, protocolo, puerto, fuente y autorización. |
+| RF-03 | `dispositivo`, `auditoria` | API y cliente para consultar, registrar y editar nombre, host, tipo, modelo, protocolo, puerto y fuente; autorización y estados bajo control administrativo. |
 | RF-04 | `captura`, `version_config` | Captura bajo demanda mediante SSH, NETCONF o archivo. |
 | RF-05 | `evento_cambio`, `captura` | Evento deduplicable que puede originar una sola captura. |
 | RF-06 | `version_config`, `captura`, `dispositivo` | Número, origen, fecha, contenido y huella SHA-256. |
@@ -28,4 +28,4 @@ Esta matriz relaciona la primera implementación del dominio con los requerimien
 | RNF-08 | Dominio sin dependencia de EF Core y configuraciones aisladas en Infraestructura. |
 | RNF-10 | Tipo, fuente, huella, estado y dispositivo asociado para cada evento recibido. |
 
-Las pruebas de dominio, aplicación e integración verifican la normalización de cuentas, la protección de contraseñas, el rechazo CSRF, la sesión, los roles, la auditoría y las restricciones administrativas.
+Las pruebas de dominio, aplicación e integración verifican la normalización de cuentas y hosts, la protección de contraseñas, el rechazo CSRF, la sesión, los roles, los canales admitidos, la auditoría y las restricciones administrativas. Las pruebas del cliente verifican además que el técnico pueda consultar el inventario sin recibir controles de modificación.

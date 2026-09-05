@@ -28,6 +28,14 @@ export const rutasAplicacion: Routes = [
         title: 'RedDiff | Inicio',
       },
       {
+        path: 'dispositivos',
+        loadComponent: () =>
+          import('./modulos/dispositivos/pagina-dispositivos').then(
+            (modulo) => modulo.PaginaDispositivos,
+          ),
+        title: 'RedDiff | Dispositivos',
+      },
+      {
         path: 'usuarios',
         canActivate: [guardianAdministrador],
         loadComponent: () =>

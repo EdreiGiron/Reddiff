@@ -4,6 +4,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using RedDiff.Aplicacion.Seguridad.Autenticacion;
 using RedDiff.Aplicacion.Seguridad.Inicializacion;
 using RedDiff.Aplicacion.Seguridad.Usuarios;
+using RedDiff.Aplicacion.Inventario.Dispositivos;
 using RedDiff.Api.Seguridad;
 using RedDiff.Api.Salud;
 using RedDiff.Infraestructura;
@@ -24,6 +25,7 @@ builder.Services.AgregarInfraestructura(builder.Configuration, builder.Environme
 builder.Services.AgregarSeguridad(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ServicioAutenticacion>();
+builder.Services.AddScoped<ServicioGestionDispositivos>();
 builder.Services.AddScoped<ServicioGestionUsuarios>();
 builder.Services.AddScoped<ServicioInicializacionIdentidad>();
 builder.Services

@@ -33,5 +33,6 @@ describe('PaginaInicio', () => {
     const elemento = fixture.nativeElement as HTMLElement;
     expect(elemento.querySelector('h1')?.textContent).toContain('administrador.principal');
     expect(elemento.textContent).toContain('Usuarios y roles');
+    expect(elemento.textContent).toContain('Dispositivos');
   });
 });

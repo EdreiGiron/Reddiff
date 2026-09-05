@@ -2,7 +2,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica, modelo persistente, identidad y acceso web administrativo implementados. La solución aún no debe utilizarse en producción.
+> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web e inventario de dispositivos implementados. La solución aún no debe utilizarse en producción.
 
 ## Tecnologías principales
 
@@ -86,6 +86,8 @@ Comprobaciones disponibles:
 Consulte [documentacion/operacion/api-local.md](documentacion/operacion/api-local.md) para conocer el procedimiento completo.
 
 La autenticación utiliza una sesión web cifrada y autorización mediante los roles `Administrador` y `Tecnico`. Consulte [documentacion/seguridad/autenticacion-y-autorizacion.md](documentacion/seguridad/autenticacion-y-autorizacion.md).
+
+El inventario admite SSH y NETCONF como canales de obtención de configuración, y SNMP trap, SNMP inform o Syslog como fuentes opcionales de avisos. Consulte [documentacion/api/dispositivos.md](documentacion/api/dispositivos.md).
 
 ## Cliente web local
 

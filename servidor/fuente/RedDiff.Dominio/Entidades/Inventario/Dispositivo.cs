@@ -1,3 +1,4 @@
+using System.Net;
 using RedDiff.Dominio.Entidades.Capturas;
 using RedDiff.Dominio.Entidades.Cumplimiento;
 using RedDiff.Dominio.Enumeraciones;
@@ -20,13 +21,7 @@ public sealed class Dispositivo
         int puerto,
         FuenteEvento? fuenteEventos)
     {
-        Nombre = ValidacionDominio.TextoObligatorio(nombre, nameof(nombre), 120);
-        Host = ValidacionDominio.TextoObligatorio(host, nameof(host), 255);
-        Tipo = ValidacionDominio.TextoObligatorio(tipo, nameof(tipo), 100);
-        Modelo = ValidacionDominio.TextoOpcional(modelo, nameof(modelo), 120);
-        Protocolo = protocolo;
-        CambiarPuerto(puerto);
-        FuenteEventos = fuenteEventos;
+        ActualizarDatos(nombre, host, tipo, modelo, protocolo, puerto, fuenteEventos);
         Estado = EstadoDispositivo.NoAutorizado;
     }
 
@@ -56,15 +51,51 @@ public sealed class Dispositivo
 
     public ICollection<Baseline> Baselines { get; } = [];
 
-    public void CambiarPuerto(int puerto)
+    public void ActualizarDatos(
+        string nombre,
+        string host,
+        string tipo,
+        string? modelo,
+        ProtocoloConexion protocolo,
+        int puerto,
+        FuenteEvento? fuenteEventos)
     {
-        if (puerto is <= 0 or > 65535)
+        if (!Enum.IsDefined(protocolo))
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(puerto),
-                "El puerto debe estar entre 1 y 65535.");
+            throw new ArgumentException("El protocolo indicado no es válido.", nameof(protocolo));
         }
 
+        if (fuenteEventos.HasValue && !Enum.IsDefined(fuenteEventos.Value))
+        {
+            throw new ArgumentException(
+                "La fuente de eventos indicada no es válida.",
+                nameof(fuenteEventos));
+        }
+
+        ValidarPuerto(puerto);
+        string nombreValidado = ValidacionDominio.TextoObligatorio(
+            nombre,
+            nameof(nombre),
+            120);
+        string hostValidado = NormalizarHost(host);
+        string tipoValidado = ValidacionDominio.TextoObligatorio(tipo, nameof(tipo), 100);
+        string? modeloValidado = ValidacionDominio.TextoOpcional(
+            modelo,
+            nameof(modelo),
+            120);
+
+        Nombre = nombreValidado;
+        Host = hostValidado;
+        Tipo = tipoValidado;
+        Modelo = modeloValidado;
+        Protocolo = protocolo;
+        Puerto = puerto;
+        FuenteEventos = fuenteEventos;
+    }
+
+    public void CambiarPuerto(int puerto)
+    {
+        ValidarPuerto(puerto);
         Puerto = puerto;
     }
 
@@ -81,5 +112,45 @@ public sealed class Dispositivo
     public void Desactivar()
     {
         Estado = EstadoDispositivo.Inactivo;
+    }
+
+    public void CambiarEstado(EstadoDispositivo estado)
+    {
+        if (!Enum.IsDefined(estado))
+        {
+            throw new ArgumentException("El estado indicado no es válido.", nameof(estado));
+        }
+
+        Estado = estado;
+    }
+
+    public static string NormalizarHost(string host)
+    {
+        string valor = ValidacionDominio.TextoObligatorio(host, nameof(host), 255)
+            .ToLowerInvariant();
+
+        if (IPAddress.TryParse(valor, out IPAddress? direccion))
+        {
+            return direccion.ToString();
+        }
+
+        if (Uri.CheckHostName(valor) != UriHostNameType.Dns)
+        {
+            throw new ArgumentException(
+                "El host debe ser un nombre DNS o una dirección IP válida, sin protocolo ni ruta.",
+                nameof(host));
+        }
+
+        return valor;
+    }
+
+    private static void ValidarPuerto(int puerto)
+    {
+        if (puerto is <= 0 or > 65535)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(puerto),
+                "El puerto debe estar entre 1 y 65535.");
+        }
     }
 }
