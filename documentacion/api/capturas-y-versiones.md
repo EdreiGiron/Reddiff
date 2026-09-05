@@ -9,7 +9,7 @@ Este contrato permite registrar un archivo de configuración asociado a un dispo
 3. una huella SHA-256 calculada sobre el contenido UTF-8 normalizado;
 4. una auditoría sin copiar el contenido del archivo.
 
-La carga nunca actualiza una versión existente. Las conexiones remotas de solo lectura mediante SSH o NETCONF se incorporarán cuando estén implementados el cifrado de credenciales de equipos y la validación explícita de su identidad criptográfica.
+La carga nunca actualiza una versión existente. El dominio ya prepara el cifrado de credenciales y la validación explícita de la identidad criptográfica del equipo; las conexiones remotas de solo lectura mediante SSH o NETCONF se incorporarán después de validar y migrar ese modelo.
 
 ## Reglas del archivo
 

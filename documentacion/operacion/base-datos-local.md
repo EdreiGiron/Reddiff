@@ -67,6 +67,18 @@ Después de la revisión, la migración aprobada se aplica y verifica con:
 .\automatizacion\powershell\Aplicar-MigracionInicial.ps1 -Confirmar
 ```
 
+## Migración incremental del acceso remoto seguro
+
+La migración `20260905061958_AgregarAccesoRemotoSeguro` fue revisada como un cambio incremental: agrega cinco columnas opcionales y una restricción `CHECK` a `reddiff.dispositivo`, sin reconstruir tablas ni modificar datos existentes.
+
+Su aplicación explícita utiliza:
+
+```powershell
+.\automatizacion\powershell\Aplicar-MigracionAccesoRemotoSeguro.ps1 -Confirmar
+```
+
+El script comprueba las huellas normalizadas de la migración, su diseñador, el snapshot y el SQL revisado. También exige que el historial contenga la migración inicial, compila la solución, aplica únicamente la migración incremental y valida el esquema y los privilegios de `reddiff_app`. Puede ejecutarse de nuevo de forma segura si la migración ya quedó aplicada.
+
 ## Rotación de credenciales locales
 
 Después de comprobar el esquema puede reemplazar las dos credenciales generadas durante la preparación:

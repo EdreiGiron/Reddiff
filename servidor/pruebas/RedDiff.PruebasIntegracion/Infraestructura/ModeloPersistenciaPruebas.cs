@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using RedDiff.Dominio.Entidades.Inventario;
 using RedDiff.Infraestructura.Persistencia;
 
 namespace RedDiff.PruebasIntegracion.Infraestructura;
@@ -90,6 +92,29 @@ public sealed class ModeloPersistenciaPruebas
         Assert.Contains("ix_version_config_dispositivo_origen_fecha", nombres);
         Assert.Contains("ix_version_config_dispositivo_estado_fecha", nombres);
         Assert.Contains("ix_captura_dispositivo_disparador_fecha", nombres);
+    }
+
+    [Fact]
+    public void Modelo_ConservaElAccesoRemotoComoBloqueIndivisibleYCifrado()
+    {
+        using ContextoRedDiff contexto = CrearContexto();
+
+        IModel modeloDiseno = contexto.GetService<IDesignTimeModel>().Model;
+        IEntityType entidad = modeloDiseno.FindEntityType(typeof(Dispositivo))!;
+        StoreObjectIdentifier tabla = StoreObjectIdentifier.Table("dispositivo", "reddiff");
+
+        Assert.Equal(
+            "secreto_acceso_protegido",
+            entidad.FindProperty(nameof(Dispositivo.SecretoAccesoProtegido))!
+                .GetColumnName(tabla));
+        Assert.Equal(
+            "huella_clave_host",
+            entidad.FindProperty(nameof(Dispositivo.HuellaClaveHost))!
+                .GetColumnName(tabla));
+        Assert.Null(entidad.FindProperty(nameof(Dispositivo.AccesoRemotoConfigurado)));
+        Assert.Contains(
+            entidad.GetCheckConstraints(),
+            restriccion => restriccion.Name == "ck_dispositivo_acceso_remoto");
     }
 
     private static ContextoRedDiff CrearContexto()

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,10 @@ public static class ConfiguracionServicios
         ArgumentNullException.ThrowIfNull(servicios);
         ArgumentNullException.ThrowIfNull(configuracion);
         ArgumentNullException.ThrowIfNull(ambiente);
+
+        servicios
+            .AddDataProtection()
+            .SetApplicationName("RedDiff");
 
         servicios
             .AddOptions<OpcionesBaseDatos>()
@@ -84,6 +89,9 @@ public static class ConfiguracionServicios
         servicios.AddScoped<IRepositorioRoles, RepositorioRoles>();
         servicios.AddScoped<IRepositorioAuditorias, RepositorioAuditorias>();
         servicios.AddSingleton<IProtectorContrasena, ProtectorContrasenaPbkdf2>();
+        servicios.AddSingleton<
+            IProtectorSecretoDispositivo,
+            ProtectorSecretoDispositivoDataProtection>();
 
         return servicios;
     }

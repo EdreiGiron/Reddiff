@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RedDiff.Infraestructura.Persistencia;
@@ -11,9 +12,11 @@ using RedDiff.Infraestructura.Persistencia;
 namespace RedDiff.Infraestructura.Persistencia.Migraciones
 {
     [DbContext(typeof(ContextoRedDiff))]
-    partial class ContextoRedDiffModelSnapshot : ModelSnapshot
+    [Migration("20260905061958_AgregarAccesoRemotoSeguro")]
+    partial class AgregarAccesoRemotoSeguro
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

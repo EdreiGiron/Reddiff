@@ -29,6 +29,7 @@ El diagrama lógico del documento presenta los atributos principales. La impleme
 - `version_config.estado`: permite retiro lógico sin eliminar evidencia;
 - `version_config.comentario`: conserva el comentario mostrado en el historial previsto por el diseño de interfaz;
 - `baseline.tipo_dispositivo`: permite aplicar una baseline a un equipo específico o a un tipo de equipo.
+- `dispositivo.usuario_acceso`, `secreto_acceso_protegido`, `algoritmo_clave_host`, `huella_clave_host` y `acceso_configurado_en`: forman el bloque indivisible que permitirá autenticar y comprobar la identidad del equipo antes de una captura remota.
 
 ## Integridad
 
@@ -36,6 +37,8 @@ El diagrama lógico del documento presenta los atributos principales. La impleme
 - Las fechas se guardan como `timestamp with time zone` y el dominio las normaliza a UTC.
 - Las huellas de eventos y versiones deben ser valores SHA-256 hexadecimales de 64 caracteres.
 - Los dispositivos normalizan nombres DNS y direcciones IP, admiten únicamente SSH o NETCONF como protocolo de captura remota y aceptan SNMP trap, SNMP inform o Syslog como fuente de avisos.
+- El acceso remoto existe únicamente si están presentes el usuario, el secreto cifrado, el algoritmo, la huella SHA-256 de la clave del host y la fecha UTC de configuración.
+- Cambiar host, puerto o protocolo, revocar la autorización o desactivar el dispositivo elimina su acceso remoto previo.
 - La combinación de dispositivo y huella de evento es única para evitar duplicidades.
 - Una captura conserva exclusivamente al usuario solicitante o al evento que la originó, según su disparador.
 - Una captura produce como máximo una versión y el número de versión es único dentro del dispositivo.
