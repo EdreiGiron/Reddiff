@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using RedDiff.Aplicacion.Seguridad;
 
 namespace RedDiff.Api.Seguridad;
@@ -27,6 +28,9 @@ public static class ConfiguracionSeguridad
             .Validate(
                 opciones => opciones.DuracionSesionMinutos is >= 5 and <= 120,
                 "Seguridad:DuracionSesionMinutos debe estar entre 5 y 120.")
+            .Validate(
+                opciones => opciones.LimiteIntentosInicioSesionPorMinuto is >= 1 and <= 1_000,
+                "Seguridad:LimiteIntentosInicioSesionPorMinuto debe estar entre 1 y 1000.")
             .Validate(
                 opciones => EsOrigenValido(opciones.OrigenCliente),
                 "Seguridad:OrigenCliente debe ser un origen HTTP o HTTPS sin ruta.")
@@ -92,16 +96,23 @@ public static class ConfiguracionSeguridad
             opciones.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             opciones.AddPolicy(
                 PoliticasSeguridad.LimiteAutenticacion,
-                contexto => RateLimitPartition.GetFixedWindowLimiter(
-                    contexto.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 10,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0,
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        AutoReplenishment = true
-                    }));
+                contexto =>
+                {
+                    int limiteIntentos = contexto.RequestServices
+                        .GetRequiredService<IOptions<OpcionesSeguridad>>()
+                        .Value.LimiteIntentosInicioSesionPorMinuto;
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        contexto.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = limiteIntentos,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0,
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            AutoReplenishment = true
+                        });
+                });
         });
 
         return servicios;

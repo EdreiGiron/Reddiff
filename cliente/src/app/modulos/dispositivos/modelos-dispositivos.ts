@@ -14,6 +14,24 @@ export interface DispositivoResumen {
   puerto: number;
   fuenteEventos: FuenteEventosDispositivo | null;
   estado: EstadoDispositivo;
+  accesoRemotoConfigurado: boolean;
+}
+
+export interface ConfigurarAccesoRemotoSolicitud {
+  usuarioAcceso: string;
+  secretoAcceso: string;
+  algoritmoClaveHost: string;
+  huellaClaveHost: string;
+  huellaClaveHostConfirmada: boolean;
+}
+
+export interface AccesoRemotoResumen {
+  dispositivoId: number;
+  configurado: boolean;
+  usuarioAcceso: string | null;
+  algoritmoClaveHost: string | null;
+  huellaClaveHost: string | null;
+  configuradoEn: string | null;
 }
 
 export interface GuardarDispositivoSolicitud {

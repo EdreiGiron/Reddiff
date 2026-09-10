@@ -20,6 +20,13 @@ public sealed record ActualizarDispositivoSolicitud(
 
 public sealed record CambiarEstadoDispositivoSolicitud(string Estado);
 
+public sealed record ConfigurarAccesoRemotoSolicitud(
+    string UsuarioAcceso,
+    string SecretoAcceso,
+    string AlgoritmoClaveHost,
+    string HuellaClaveHost,
+    bool HuellaClaveHostConfirmada);
+
 public sealed record DispositivoResumen(
     long Id,
     string Nombre,
@@ -29,4 +36,13 @@ public sealed record DispositivoResumen(
     string Protocolo,
     int Puerto,
     string? FuenteEventos,
-    string Estado);
+    string Estado,
+    bool AccesoRemotoConfigurado);
+
+public sealed record AccesoRemotoResumen(
+    long DispositivoId,
+    bool Configurado,
+    string? UsuarioAcceso,
+    string? AlgoritmoClaveHost,
+    string? HuellaClaveHost,
+    DateTimeOffset? ConfiguradoEn);

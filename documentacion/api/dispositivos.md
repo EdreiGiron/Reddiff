@@ -2,7 +2,7 @@
 
 ## Alcance
 
-El inventario implementa RF-03 sobre la tabla `reddiff.dispositivo` creada por la migración inicial. Registra identificación y punto de conexión. El dominio ya prepara un bloque cifrado de acceso remoto, pero esta etapa no lo expone por API ni intenta conectarse al equipo durante un alta o una edición.
+El inventario implementa RF-03 sobre la tabla `reddiff.dispositivo` creada por la migración inicial. Registra identificación, punto de conexión y el estado de configuración del acceso remoto. La API permite administrar el bloque protegido, pero no intenta conectarse al equipo durante un alta, una edición o una actualización de credenciales.
 
 Los canales de obtención de configuración admitidos son:
 
@@ -18,22 +18,27 @@ Las fuentes opcionales de avisos son `SnmpTrap`, `SnmpInform` y `Syslog`. Un avi
 | Listar y consultar dispositivos            | Sí            | Sí      |
 | Registrar y editar dispositivos            | Sí            | No      |
 | Autorizar, revocar, desactivar o reactivar | Sí            | No      |
+| Consultar metadatos del acceso remoto      | Sí            | No      |
+| Configurar, reemplazar o revocar el acceso | Sí            | No      |
 
 La API aplica estos permisos aunque un cliente intente omitir las restricciones visuales.
 
 ## Endpoints
 
-| Método y ruta                         | Resultado                                           |
-| ------------------------------------- | --------------------------------------------------- |
-| `GET /api/dispositivos`               | Lista ordenada por nombre.                          |
-| `GET /api/dispositivos/{id}`          | Detalle del dispositivo indicado.                   |
-| `POST /api/dispositivos`              | Registra un dispositivo en estado `NoAutorizado`.   |
-| `PUT /api/dispositivos/{id}`          | Actualiza identificación y datos de comunicación.   |
-| `PATCH /api/dispositivos/{id}/estado` | Cambia a `NoAutorizado`, `Autorizado` o `Inactivo`. |
+| Método y ruta                                 | Resultado                                                              |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| `GET /api/dispositivos`                       | Lista ordenada por nombre.                                             |
+| `GET /api/dispositivos/{id}`                  | Detalle del dispositivo indicado.                                      |
+| `POST /api/dispositivos`                      | Registra un dispositivo en estado `NoAutorizado`.                      |
+| `PUT /api/dispositivos/{id}`                  | Actualiza identificación y datos de comunicación.                      |
+| `PATCH /api/dispositivos/{id}/estado`         | Cambia a `NoAutorizado`, `Autorizado` o `Inactivo`.                    |
+| `GET /api/dispositivos/{id}/acceso-remoto`    | Devuelve estado, usuario, algoritmo, huella y fecha; nunca el secreto. |
+| `PUT /api/dispositivos/{id}/acceso-remoto`    | Configura o reemplaza el bloque protegido.                             |
+| `DELETE /api/dispositivos/{id}/acceso-remoto` | Revoca y elimina el bloque completo.                                   |
 
-Las operaciones `POST`, `PUT` y `PATCH` requieren sesión administrativa y encabezado `X-CSRF-TOKEN`.
+Las operaciones `POST`, `PUT`, `PATCH` y `DELETE` requieren sesión administrativa y encabezado `X-CSRF-TOKEN`. La consulta de metadatos del acceso también exige el rol `Administrador`.
 
-No existe todavía un endpoint para configurar credenciales o iniciar una captura remota. Esas operaciones permanecerán deshabilitadas hasta aplicar la migración incremental revisada y completar los conectores de solo lectura.
+Ninguna respuesta contiene `secretoAcceso` ni el valor cifrado persistido. Configurar el bloque no inicia una captura ni prueba la conexión; los conectores de solo lectura permanecen deshabilitados.
 
 ## Reglas de validación
 
@@ -46,6 +51,7 @@ No existe todavía un endpoint para configurar credenciales o iniciar una captur
 - un alta siempre comienza sin autorización y requiere revisión explícita;
 - un acceso remoto solo puede asociarse a un dispositivo autorizado y requiere una huella SHA-256 de la clave del host aprobada previamente;
 - cambiar host, puerto o protocolo, revocar la autorización o desactivar el dispositivo invalida el acceso remoto;
-- las altas, ediciones y transiciones aceptadas se registran en `auditoria`, al igual que sus rechazos por validación o conflicto.
+- las altas, ediciones, transiciones y mutaciones del acceso aceptadas se registran en `auditoria`, al igual que sus rechazos por validación o conflicto;
+- el detalle de auditoría no contiene el usuario técnico, el secreto ni la huella del equipo.
 
-La gestión actual del inventario no requiere datos de acceso. El bloque protegido se incorpora mediante la migración incremental `20260905061958_AgregarAccesoRemotoSeguro`, generada, revisada y aplicada por separado antes de habilitar su API.
+El bloque protegido fue incorporado mediante la migración incremental `20260905061958_AgregarAccesoRemotoSeguro`, generada, revisada y aplicada por separado antes de habilitar esta API.

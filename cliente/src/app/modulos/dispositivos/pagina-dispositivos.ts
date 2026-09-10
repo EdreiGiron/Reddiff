@@ -11,12 +11,14 @@ import { finalize } from 'rxjs';
 import { obtenerMensajeError } from '../../nucleo/http/modelo-error-api';
 import { ServicioSesion } from '../../nucleo/identidad/servicio-sesion';
 import {
+  AccesoRemotoResumen,
   DispositivoResumen,
   EstadoDispositivo,
   FuenteEventosDispositivo,
   GuardarDispositivoSolicitud,
   ProtocoloDispositivo,
 } from './modelos-dispositivos';
+import { FormularioAccesoRemoto } from './acceso-remoto/formulario-acceso-remoto';
 import { ServicioDispositivos } from './servicio-dispositivos';
 
 interface CambioEstadoPendiente {
@@ -26,7 +28,7 @@ interface CambioEstadoPendiente {
 
 @Component({
   selector: 'rd-pagina-dispositivos',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FormularioAccesoRemoto],
   templateUrl: './pagina-dispositivos.html',
   styleUrl: './pagina-dispositivos.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,8 +42,11 @@ export class PaginaDispositivos implements OnInit {
   protected readonly cargando = signal(true);
   protected readonly guardando = signal(false);
   protected readonly cambiandoEstado = signal(false);
+  protected readonly revocandoAcceso = signal(false);
   protected readonly formularioVisible = signal(false);
   protected readonly dispositivoEditado = signal<DispositivoResumen | null>(null);
+  protected readonly dispositivoAcceso = signal<DispositivoResumen | null>(null);
+  protected readonly revocacionAccesoPendiente = signal<DispositivoResumen | null>(null);
   protected readonly cambioPendiente = signal<CambioEstadoPendiente | null>(null);
   protected readonly mensajeError = signal<string | null>(null);
   protected readonly mensajeExito = signal<string | null>(null);
@@ -228,6 +233,68 @@ export class PaginaDispositivos implements OnInit {
       });
   }
 
+  protected abrirAccesoRemoto(dispositivo: DispositivoResumen): void {
+    this.limpiarMensajes();
+    this.dispositivoAcceso.set(dispositivo);
+  }
+
+  protected cerrarAccesoRemoto(): void {
+    this.dispositivoAcceso.set(null);
+    this.mensajeError.set(null);
+  }
+
+  protected accesoRemotoActualizado(detalle: AccesoRemotoResumen): void {
+    const dispositivo = this.dispositivoAcceso();
+    if (!dispositivo) {
+      return;
+    }
+
+    const reemplazo = dispositivo.accesoRemotoConfigurado;
+    this.actualizarEstadoAcceso(dispositivo.id, detalle.configurado);
+    this.dispositivoAcceso.set(null);
+    this.mensajeExito.set(
+      reemplazo
+        ? 'El acceso remoto fue reemplazado correctamente.'
+        : 'El acceso remoto fue configurado correctamente.',
+    );
+  }
+
+  protected solicitarRevocacionAcceso(dispositivo: DispositivoResumen): void {
+    this.limpiarMensajes();
+    this.revocacionAccesoPendiente.set(dispositivo);
+  }
+
+  protected cancelarRevocacionAcceso(): void {
+    if (!this.revocandoAcceso()) {
+      this.revocacionAccesoPendiente.set(null);
+    }
+  }
+
+  protected confirmarRevocacionAcceso(): void {
+    const dispositivo = this.revocacionAccesoPendiente();
+    if (!dispositivo) {
+      return;
+    }
+
+    this.revocandoAcceso.set(true);
+    this.servicioDispositivos
+      .revocarAccesoRemoto(dispositivo.id)
+      .pipe(finalize(() => this.revocandoAcceso.set(false)))
+      .subscribe({
+        next: (detalle) => {
+          this.actualizarEstadoAcceso(dispositivo.id, detalle.configurado);
+          this.revocacionAccesoPendiente.set(null);
+          this.mensajeExito.set('El acceso remoto fue revocado correctamente.');
+        },
+        error: (error: unknown) => {
+          this.revocacionAccesoPendiente.set(null);
+          this.mensajeError.set(
+            obtenerMensajeError(error, 'No fue posible revocar el acceso remoto.'),
+          );
+        },
+      });
+  }
+
   protected actualizarBusqueda(evento: Event): void {
     this.busqueda.set((evento.target as HTMLInputElement).value);
   }
@@ -293,6 +360,16 @@ export class PaginaDispositivos implements OnInit {
         : [...dispositivos, actualizado];
       return resultado.sort((primero, segundo) => primero.nombre.localeCompare(segundo.nombre));
     });
+  }
+
+  private actualizarEstadoAcceso(dispositivoId: number, configurado: boolean): void {
+    this.dispositivos.update((dispositivos) =>
+      dispositivos.map((dispositivo) =>
+        dispositivo.id === dispositivoId
+          ? { ...dispositivo, accesoRemotoConfigurado: configurado }
+          : dispositivo,
+      ),
+    );
   }
 
   private limpiarMensajes(): void {

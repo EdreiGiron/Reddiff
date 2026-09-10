@@ -2,7 +2,7 @@
 
 ## Alcance de esta etapa
 
-El modelo y su migración incremental preparan las condiciones de seguridad necesarias para una captura remota posterior mediante SSH o NETCONF. Todavía no abren conexiones, solicitan capturas ni exponen credenciales por API. La migración se aplica únicamente mediante el procedimiento confirmado y verificable de operación local.
+El modelo, la migración incremental y la administración web preparan las condiciones de seguridad necesarias para una captura remota posterior mediante SSH o NETCONF. Configurar, reemplazar o revocar el acceso no abre conexiones ni solicita capturas. La API solo devuelve metadatos seguros y nunca el secreto almacenado ni su representación protegida.
 
 La captura posterior será exclusivamente de lectura. No se incorporarán operaciones para entrar en modo de configuración, aplicar cambios ni ejecutar comandos arbitrarios.
 
@@ -20,6 +20,8 @@ Los cinco valores deben existir juntos o permanecer vacíos. La restricción `ck
 
 El secreto no se almacena como texto legible ni se incorpora a respuestas, auditorías, registros o documentación. La protección utiliza el propósito aislado `RedDiff.Dispositivos.Credenciales.v1`, por lo que otro componente con un propósito distinto no puede reutilizar el dato protegido.
 
+La consulta y las mutaciones están limitadas al rol `Administrador`. Las mutaciones requieren protección CSRF, vuelven a comprobar que la cuenta y su rol sigan activos y dejan una auditoría sin material sensible. Un reemplazo exige proporcionar un secreto nuevo; el valor existente no puede recuperarse desde el formulario.
+
 ## Confianza del equipo
 
 La aplicación no aceptará automáticamente una clave desconocida presentada por el equipo. Antes de guardar el acceso, un administrador deberá obtener la huella SHA-256 por un canal confiable y aprobarla explícitamente. El futuro conector comparará la clave recibida durante la negociación con ese valor antes de autenticar.
@@ -32,11 +34,21 @@ Data Protection necesita conservar su anillo de claves fuera de la base de datos
 
 Perder ese anillo vuelve irrecuperables los secretos existentes. Copiarlo sin protección permitiría intentar descifrarlos. Su respaldo, rotación, permisos y recuperación deberán formar parte del procedimiento de despliegue antes de habilitar capturas remotas.
 
+## Administración disponible
+
+Desde **Dispositivos**, un administrador puede:
+
+1. configurar el acceso de un equipo autorizado;
+2. consultar únicamente el usuario, el algoritmo, la huella y la fecha de configuración;
+3. reemplazar el bloque completo tras verificar nuevamente la huella;
+4. revocar el acceso, borrando conjuntamente los cinco valores persistidos.
+
+El formulario requiere una confirmación explícita de que la huella se obtuvo por un canal confiable. El secreto se limpia del control tanto después de una respuesta correcta como después de un error.
+
 ## Límites pendientes
 
 Esta etapa no incluye:
 
-- pantalla o endpoint para configurar el acceso;
 - bibliotecas o conectores SSH y NETCONF;
 - ejecución de capturas contra equipos reales;
 - recepción de avisos SNMP o Syslog.

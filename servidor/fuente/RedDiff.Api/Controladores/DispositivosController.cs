@@ -84,6 +84,53 @@ public sealed class DispositivosController(ServicioGestionDispositivos servicio)
         return resultado.Exitoso ? Ok(resultado.Valor) : this.ComoProblema(resultado);
     }
 
+    [HttpGet("{dispositivoId:long}/acceso-remoto")]
+    [Authorize(Policy = PoliticasSeguridad.Administrador)]
+    public async Task<IActionResult> ObtenerAccesoRemoto(
+        long dispositivoId,
+        CancellationToken cancellationToken)
+    {
+        ResultadoOperacion<AccesoRemotoResumen> resultado =
+            await servicio.ObtenerAccesoRemotoAsync(
+                ObtenerUsuarioId(),
+                dispositivoId,
+                cancellationToken);
+
+        return resultado.Exitoso ? Ok(resultado.Valor) : this.ComoProblema(resultado);
+    }
+
+    [HttpPut("{dispositivoId:long}/acceso-remoto")]
+    [Authorize(Policy = PoliticasSeguridad.Administrador)]
+    public async Task<IActionResult> ConfigurarAccesoRemoto(
+        long dispositivoId,
+        [FromBody] ConfigurarAccesoRemotoSolicitud solicitud,
+        CancellationToken cancellationToken)
+    {
+        ResultadoOperacion<AccesoRemotoResumen> resultado =
+            await servicio.ConfigurarAccesoRemotoAsync(
+                ObtenerUsuarioId(),
+                dispositivoId,
+                solicitud,
+                cancellationToken);
+
+        return resultado.Exitoso ? Ok(resultado.Valor) : this.ComoProblema(resultado);
+    }
+
+    [HttpDelete("{dispositivoId:long}/acceso-remoto")]
+    [Authorize(Policy = PoliticasSeguridad.Administrador)]
+    public async Task<IActionResult> RevocarAccesoRemoto(
+        long dispositivoId,
+        CancellationToken cancellationToken)
+    {
+        ResultadoOperacion<AccesoRemotoResumen> resultado =
+            await servicio.RevocarAccesoRemotoAsync(
+                ObtenerUsuarioId(),
+                dispositivoId,
+                cancellationToken);
+
+        return resultado.Exitoso ? Ok(resultado.Valor) : this.ComoProblema(resultado);
+    }
+
     private long ObtenerUsuarioId()
     {
         return long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

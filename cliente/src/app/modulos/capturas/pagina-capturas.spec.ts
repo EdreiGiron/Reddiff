@@ -93,6 +93,7 @@ describe('PaginaCapturas', () => {
                   puerto: 22,
                   fuenteEventos: 'Syslog',
                   estado: 'Autorizado',
+                  accesoRemotoConfigurado: true,
                 },
                 {
                   id: 2,
@@ -104,6 +105,7 @@ describe('PaginaCapturas', () => {
                   puerto: 830,
                   fuenteEventos: null,
                   estado: 'NoAutorizado',
+                  accesoRemotoConfigurado: false,
                 },
               ]),
           },

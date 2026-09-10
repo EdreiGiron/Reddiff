@@ -14,7 +14,7 @@ No existe una contraseña predeterminada ni un endpoint HTTP para crear la prime
 - cada solicitud protegida comprueba en PostgreSQL que la cuenta, el rol y las declaraciones de la sesión continúen vigentes;
 - los cambios de estado, rol o contraseña invalidan el acceso anterior en la siguiente solicitud;
 - las operaciones HTTP que modifican datos requieren el encabezado antifalsificación `X-CSRF-TOKEN`;
-- el inicio de sesión admite diez intentos por minuto y dirección remota;
+- el inicio de sesión admite por defecto diez intentos por minuto y dirección remota;
 - CORS solo acepta el origen configurado y permite credenciales únicamente para ese origen;
 - los errores de inicio de sesión no distinguen cuentas inexistentes, inactivas o contraseñas incorrectas;
 - las respuestas de usuarios nunca incluyen el hash ni la contraseña;

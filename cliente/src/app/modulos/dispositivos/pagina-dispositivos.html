@@ -88,9 +88,10 @@
               <th scope="col">Dispositivo</th>
               <th scope="col">Conexión</th>
               <th scope="col">Eventos</th>
+              <th scope="col">Acceso remoto</th>
               <th scope="col">Estado</th>
               @if (servicioSesion.esAdministrador()) {
-                <th scope="col"><span class="solo-lectura">Acciones</span></th>
+                <th class="columna-acciones" scope="col">Acciones</th>
               }
             </tr>
           </thead>
@@ -118,6 +119,17 @@
                   }}</small>
                 </td>
                 <td data-label="Eventos">{{ etiquetaFuente(dispositivo.fuenteEventos) }}</td>
+                <td data-label="Acceso remoto">
+                  <span
+                    class="estado"
+                    [attr.data-estado]="
+                      dispositivo.accesoRemotoConfigurado ? 'Autorizado' : 'Inactivo'
+                    "
+                  >
+                    <span aria-hidden="true"></span>
+                    {{ dispositivo.accesoRemotoConfigurado ? 'Configurado' : 'Sin configurar' }}
+                  </span>
+                </td>
                 <td data-label="Estado">
                   <span class="estado" [attr.data-estado]="dispositivo.estado">
                     <span aria-hidden="true"></span>
@@ -125,27 +137,49 @@
                   </span>
                 </td>
                 @if (servicioSesion.esAdministrador()) {
-                  <td class="acciones-fila">
-                    <button type="button" (click)="abrirEdicion(dispositivo)">Editar</button>
-                    @if (dispositivo.estado === 'NoAutorizado') {
-                      <button type="button" (click)="solicitarCambio(dispositivo, 'Autorizado')">
-                        Autorizar
-                      </button>
-                    }
-                    @if (dispositivo.estado === 'Autorizado') {
-                      <button type="button" (click)="solicitarCambio(dispositivo, 'NoAutorizado')">
-                        Revocar
-                      </button>
-                    }
-                    @if (dispositivo.estado !== 'Inactivo') {
-                      <button type="button" (click)="solicitarCambio(dispositivo, 'Inactivo')">
-                        Desactivar
-                      </button>
-                    } @else {
-                      <button type="button" (click)="solicitarCambio(dispositivo, 'NoAutorizado')">
-                        Reactivar
-                      </button>
-                    }
+                  <td class="acciones-fila" data-label="Acciones">
+                    <div class="grupo-acciones">
+                      <button type="button" (click)="abrirEdicion(dispositivo)">Editar</button>
+                      @if (dispositivo.estado === 'Autorizado') {
+                        <button type="button" (click)="abrirAccesoRemoto(dispositivo)">
+                          {{
+                            dispositivo.accesoRemotoConfigurado
+                              ? 'Reemplazar acceso'
+                              : 'Configurar acceso'
+                          }}
+                        </button>
+                      }
+                      @if (dispositivo.accesoRemotoConfigurado) {
+                        <button type="button" (click)="solicitarRevocacionAcceso(dispositivo)">
+                          Revocar acceso
+                        </button>
+                      }
+                      @if (dispositivo.estado === 'NoAutorizado') {
+                        <button type="button" (click)="solicitarCambio(dispositivo, 'Autorizado')">
+                          Autorizar
+                        </button>
+                      }
+                      @if (dispositivo.estado === 'Autorizado') {
+                        <button
+                          type="button"
+                          (click)="solicitarCambio(dispositivo, 'NoAutorizado')"
+                        >
+                          Desautorizar
+                        </button>
+                      }
+                      @if (dispositivo.estado !== 'Inactivo') {
+                        <button type="button" (click)="solicitarCambio(dispositivo, 'Inactivo')">
+                          Desactivar
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          (click)="solicitarCambio(dispositivo, 'NoAutorizado')"
+                        >
+                          Reactivar
+                        </button>
+                      }
+                    </div>
                   </td>
                 }
               </tr>
@@ -311,6 +345,14 @@
   </div>
 }
 
+@if (dispositivoAcceso(); as dispositivo) {
+  <rd-formulario-acceso-remoto
+    [dispositivo]="dispositivo"
+    (cerrado)="cerrarAccesoRemoto()"
+    (actualizado)="accesoRemotoActualizado($event)"
+  />
+}
+
 @if (cambioPendiente(); as pendiente) {
   <div class="capa-dialogo">
     <section
@@ -344,6 +386,41 @@
           [disabled]="cambiandoEstado()"
         >
           {{ cambiandoEstado() ? 'Aplicando…' : 'Confirmar cambio' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}
+
+@if (revocacionAccesoPendiente(); as dispositivo) {
+  <div class="capa-dialogo">
+    <section
+      class="dialogo dialogo--confirmacion"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="titulo-revocacion-acceso"
+      aria-describedby="detalle-revocacion-acceso"
+    >
+      <span class="icono-confirmacion" aria-hidden="true">!</span>
+      <h2 id="titulo-revocacion-acceso">Revocar acceso de {{ dispositivo.nombre }}</h2>
+      <p id="detalle-revocacion-acceso">
+        Se eliminarán el usuario técnico, el secreto protegido y la confianza registrada para la
+        clave del host. Esta operación quedará registrada en la auditoría.
+      </p>
+      <p class="advertencia-confirmacion">
+        El inventario, las capturas y las versiones existentes no serán eliminados.
+      </p>
+      <footer class="dialogo__acciones">
+        <button class="boton boton--secundario" type="button" (click)="cancelarRevocacionAcceso()">
+          Cancelar
+        </button>
+        <button
+          class="boton boton--peligro"
+          type="button"
+          (click)="confirmarRevocacionAcceso()"
+          [disabled]="revocandoAcceso()"
+        >
+          {{ revocandoAcceso() ? 'Revocando…' : 'Revocar acceso' }}
         </button>
       </footer>
     </section>

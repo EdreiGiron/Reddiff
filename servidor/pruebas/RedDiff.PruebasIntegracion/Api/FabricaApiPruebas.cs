@@ -36,6 +36,7 @@ public sealed class FabricaApiPruebas : WebApplicationFactory<Program>
                 ["BaseDatos:Contrasena"] = "secreto-temporal-de-prueba",
                 ["BaseDatos:ModoSsl"] = "Disable",
                 ["Seguridad:DuracionSesionMinutos"] = "30",
+                ["Seguridad:LimiteIntentosInicioSesionPorMinuto"] = "100",
                 ["Seguridad:OrigenCliente"] = "https://localhost"
             };
 

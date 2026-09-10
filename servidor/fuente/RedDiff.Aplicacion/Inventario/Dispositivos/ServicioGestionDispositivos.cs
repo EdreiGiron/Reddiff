@@ -1,4 +1,5 @@
 using RedDiff.Aplicacion.Abstracciones.Persistencia;
+using RedDiff.Aplicacion.Abstracciones.Seguridad;
 using RedDiff.Aplicacion.Comun;
 using RedDiff.Aplicacion.Seguridad;
 using RedDiff.Dominio.Entidades.Identidad;
@@ -12,6 +13,7 @@ public sealed class ServicioGestionDispositivos(
     IRepositorioDispositivos repositorioDispositivos,
     IRepositorioUsuarios repositorioUsuarios,
     IRepositorioAuditorias repositorioAuditorias,
+    IProtectorSecretoDispositivo protectorSecreto,
     IUnidadDeTrabajo unidadDeTrabajo,
     TimeProvider reloj)
 {
@@ -239,6 +241,180 @@ public sealed class ServicioGestionDispositivos(
         return ResultadoOperacion<DispositivoResumen>.Correcto(Mapear(dispositivo));
     }
 
+    public async Task<ResultadoOperacion<AccesoRemotoResumen>> ObtenerAccesoRemotoAsync(
+        long administradorId,
+        long dispositivoId,
+        CancellationToken cancellationToken = default)
+    {
+        ResultadoOperacion<Usuario>? autorizacion = await ValidarAdministradorAsync(
+            administradorId,
+            cancellationToken);
+        if (autorizacion is not null)
+        {
+            return ResultadoOperacion<AccesoRemotoResumen>.Fallido(
+                autorizacion.Error!.Codigo,
+                autorizacion.Error.Mensaje);
+        }
+
+        Dispositivo? dispositivo = await repositorioDispositivos.ObtenerPorIdAsync(
+            dispositivoId,
+            false,
+            cancellationToken);
+
+        return dispositivo is null
+            ? ResultadoOperacion<AccesoRemotoResumen>.Fallido(
+                CodigosErrorOperacion.NoEncontrado,
+                "El dispositivo solicitado no existe.")
+            : ResultadoOperacion<AccesoRemotoResumen>.Correcto(MapearAccesoRemoto(dispositivo));
+    }
+
+    public async Task<ResultadoOperacion<AccesoRemotoResumen>> ConfigurarAccesoRemotoAsync(
+        long administradorId,
+        long dispositivoId,
+        ConfigurarAccesoRemotoSolicitud solicitud,
+        CancellationToken cancellationToken = default)
+    {
+        ResultadoOperacion<Usuario>? autorizacion = await ValidarAdministradorAsync(
+            administradorId,
+            cancellationToken);
+        if (autorizacion is not null)
+        {
+            return ResultadoOperacion<AccesoRemotoResumen>.Fallido(
+                autorizacion.Error!.Codigo,
+                autorizacion.Error.Mensaje);
+        }
+
+        Dispositivo? dispositivo = await repositorioDispositivos.ObtenerPorIdAsync(
+            dispositivoId,
+            true,
+            cancellationToken);
+        if (dispositivo is null)
+        {
+            return await FallarAccesoRemotoAsync(
+                administradorId,
+                "ConfigurarAccesoRemoto",
+                dispositivoId,
+                CodigosErrorOperacion.NoEncontrado,
+                "El dispositivo solicitado no existe.",
+                cancellationToken);
+        }
+
+        bool reemplazo = dispositivo.AccesoRemotoConfigurado;
+        string accion = reemplazo
+            ? "ReemplazarAccesoRemoto"
+            : "ConfigurarAccesoRemoto";
+
+        if (dispositivo.Estado != EstadoDispositivo.Autorizado)
+        {
+            return await FallarAccesoRemotoAsync(
+                administradorId,
+                accion,
+                dispositivoId,
+                CodigosErrorOperacion.Conflicto,
+                "El acceso remoto solo puede configurarse en un dispositivo autorizado.",
+                cancellationToken);
+        }
+
+        if (!solicitud.HuellaClaveHostConfirmada)
+        {
+            return await FallarAccesoRemotoAsync(
+                administradorId,
+                accion,
+                dispositivoId,
+                CodigosErrorOperacion.Validacion,
+                "Debe confirmar que la huella de la clave del host fue verificada por un canal confiable.",
+                cancellationToken);
+        }
+
+        try
+        {
+            string secretoProtegido = protectorSecreto.Proteger(solicitud.SecretoAcceso);
+            dispositivo.ConfigurarAccesoRemoto(
+                solicitud.UsuarioAcceso,
+                secretoProtegido,
+                solicitud.AlgoritmoClaveHost,
+                solicitud.HuellaClaveHost,
+                reloj.GetUtcNow());
+        }
+        catch (ArgumentException excepcion)
+        {
+            return await FallarAccesoRemotoAsync(
+                administradorId,
+                accion,
+                dispositivoId,
+                CodigosErrorOperacion.Validacion,
+                excepcion.Message,
+                cancellationToken);
+        }
+        catch (InvalidOperationException excepcion)
+        {
+            return await FallarAccesoRemotoAsync(
+                administradorId,
+                accion,
+                dispositivoId,
+                CodigosErrorOperacion.Conflicto,
+                excepcion.Message,
+                cancellationToken);
+        }
+
+        RegistrarAuditoria(
+            administradorId,
+            accion,
+            dispositivo.Id,
+            reemplazo
+                ? $"Se reemplazó el acceso remoto de {dispositivo.Nombre} con una nueva verificación de la clave del host."
+                : $"Se configuró el acceso remoto de {dispositivo.Nombre} con verificación explícita de la clave del host.");
+        await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
+
+        return ResultadoOperacion<AccesoRemotoResumen>.Correcto(
+            MapearAccesoRemoto(dispositivo));
+    }
+
+    public async Task<ResultadoOperacion<AccesoRemotoResumen>> RevocarAccesoRemotoAsync(
+        long administradorId,
+        long dispositivoId,
+        CancellationToken cancellationToken = default)
+    {
+        ResultadoOperacion<Usuario>? autorizacion = await ValidarAdministradorAsync(
+            administradorId,
+            cancellationToken);
+        if (autorizacion is not null)
+        {
+            return ResultadoOperacion<AccesoRemotoResumen>.Fallido(
+                autorizacion.Error!.Codigo,
+                autorizacion.Error.Mensaje);
+        }
+
+        Dispositivo? dispositivo = await repositorioDispositivos.ObtenerPorIdAsync(
+            dispositivoId,
+            true,
+            cancellationToken);
+        if (dispositivo is null)
+        {
+            return await FallarAccesoRemotoAsync(
+                administradorId,
+                "RevocarAccesoRemoto",
+                dispositivoId,
+                CodigosErrorOperacion.NoEncontrado,
+                "El dispositivo solicitado no existe.",
+                cancellationToken);
+        }
+
+        bool estabaConfigurado = dispositivo.AccesoRemotoConfigurado;
+        dispositivo.EliminarAccesoRemoto();
+        RegistrarAuditoria(
+            administradorId,
+            "RevocarAccesoRemoto",
+            dispositivo.Id,
+            estabaConfigurado
+                ? $"Se revocó el acceso remoto de {dispositivo.Nombre}."
+                : $"Se confirmó que {dispositivo.Nombre} permanecía sin acceso remoto configurado.");
+        await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
+
+        return ResultadoOperacion<AccesoRemotoResumen>.Correcto(
+            MapearAccesoRemoto(dispositivo));
+    }
+
     private async Task<ResultadoOperacion<DispositivoResumen>?> ValidarUnicidadAsync(
         long administradorId,
         string accion,
@@ -338,6 +514,27 @@ public sealed class ServicioGestionDispositivos(
         await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
 
         return ResultadoOperacion<DispositivoResumen>.Fallido(codigo, mensaje);
+    }
+
+    private async Task<ResultadoOperacion<AccesoRemotoResumen>> FallarAccesoRemotoAsync(
+        long administradorId,
+        string accion,
+        long? dispositivoId,
+        string codigo,
+        string mensaje,
+        CancellationToken cancellationToken)
+    {
+        repositorioAuditorias.Agregar(new Auditoria(
+            administradorId,
+            accion,
+            "Dispositivo",
+            dispositivoId,
+            reloj.GetUtcNow(),
+            EstadoAuditoria.Fallido,
+            mensaje));
+        await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
+
+        return ResultadoOperacion<AccesoRemotoResumen>.Fallido(codigo, mensaje);
     }
 
     private static Dispositivo ConstruirDispositivo(
@@ -447,6 +644,18 @@ public sealed class ServicioGestionDispositivos(
             dispositivo.Protocolo.ToString(),
             dispositivo.Puerto,
             dispositivo.FuenteEventos?.ToString(),
-            dispositivo.Estado.ToString());
+            dispositivo.Estado.ToString(),
+            dispositivo.AccesoRemotoConfigurado);
+    }
+
+    private static AccesoRemotoResumen MapearAccesoRemoto(Dispositivo dispositivo)
+    {
+        return new AccesoRemotoResumen(
+            dispositivo.Id,
+            dispositivo.AccesoRemotoConfigurado,
+            dispositivo.UsuarioAcceso,
+            dispositivo.AlgoritmoClaveHost,
+            dispositivo.HuellaClaveHost,
+            dispositivo.AccesoConfiguradoEn);
     }
 }

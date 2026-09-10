@@ -1,6 +1,6 @@
 # Cliente web de RedDiff
 
-Aplicación Angular para operar RedDiff desde el navegador. Incluye inicio y cierre de sesión, restauración segura de la sesión, administración de usuarios, inventario de dispositivos y evidencia histórica de configuraciones según el rol autenticado.
+Aplicación Angular para operar RedDiff desde el navegador. Incluye inicio y cierre de sesión, restauración segura de la sesión, administración de usuarios, inventario de dispositivos, gestión protegida del acceso remoto y evidencia histórica de configuraciones según el rol autenticado.
 
 ## Requisitos
 
@@ -26,6 +26,7 @@ Abra `http://localhost:4200`. `proxy.conf.json` redirige las rutas `/api` y `/sa
 - Las contraseñas no se guardan en `localStorage`, `sessionStorage` ni cookies creadas por Angular.
 - El interceptor solicita la protección CSRF y agrega `X-CSRF-TOKEN` a `POST`, `PUT`, `PATCH` y `DELETE`.
 - Los guardianes de rutas mejoran la navegación, pero la API sigue siendo la autoridad final para autorizar cada operación.
+- El formulario de acceso remoto solicita siempre un secreto nuevo, usa un campo de contraseña y no recibe el secreto almacenado desde la API.
 
 ## Validación
 
@@ -35,4 +36,4 @@ npm test -- --watch=false
 npx prettier --check src angular.json proxy.conf.json README.md
 ```
 
-La compilación de producción mantiene carga diferida para las páginas de acceso, inicio, usuarios, dispositivos y capturas.
+La compilación de producción mantiene carga diferida para las páginas de acceso, inicio, usuarios, dispositivos y capturas. La gestión del acceso remoto permanece dentro del módulo de dispositivos y solo se presenta al administrador.

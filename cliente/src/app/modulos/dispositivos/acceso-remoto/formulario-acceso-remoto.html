@@ -1,0 +1,183 @@
+<div class="capa-dialogo">
+  <section
+    class="dialogo"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="titulo-formulario-acceso"
+  >
+    <header class="dialogo__encabezado">
+      <div>
+        <p class="sobrelinea">Acceso administrativo protegido</p>
+        <h2 id="titulo-formulario-acceso">
+          {{ detalle()?.configurado ? 'Reemplazar acceso remoto' : 'Configurar acceso remoto' }}
+        </h2>
+        <p class="subtitulo-dialogo">
+          {{ dispositivo().nombre }} · {{ dispositivo().host }}:{{ dispositivo().puerto }} ·
+          {{ etiquetaProtocolo() }}
+        </p>
+      </div>
+      <button
+        class="boton-cerrar"
+        type="button"
+        (click)="cerrar()"
+        aria-label="Cerrar"
+        [disabled]="cargando() || guardando()"
+      >
+        ×
+      </button>
+    </header>
+
+    @if (cargando()) {
+      <div class="estado-vacio" role="status">
+        <span class="cargador" aria-hidden="true"></span>
+        <p>Consultando el estado del acceso…</p>
+      </div>
+    } @else if (!detalle()) {
+      <div class="estado-vacio">
+        <div class="alerta alerta--error" role="alert">{{ mensajeError() }}</div>
+        <div class="acciones-carga">
+          <button class="boton boton--secundario" type="button" (click)="cerrar()">Cerrar</button>
+          <button class="boton boton--primario" type="button" (click)="cargar()">Reintentar</button>
+        </div>
+      </div>
+    } @else {
+      <form [formGroup]="formulario" (ngSubmit)="guardar()" novalidate>
+        @if (mensajeError()) {
+          <div class="alerta alerta--error" role="alert">{{ mensajeError() }}</div>
+        }
+
+        @if (detalle()?.configurado) {
+          <div class="acceso-actual" role="note">
+            <strong>Acceso configurado actualmente</strong>
+            <dl>
+              <div>
+                <dt>Usuario</dt>
+                <dd>{{ detalle()?.usuarioAcceso }}</dd>
+              </div>
+              <div>
+                <dt>Última configuración</dt>
+                <dd>{{ formatearFecha(detalle()?.configuradoEn ?? null) }}</dd>
+              </div>
+            </dl>
+            <p>
+              El secreto almacenado no puede consultarse. Para cambiarlo debes ingresar uno nuevo y
+              confirmar otra vez la huella del equipo.
+            </p>
+          </div>
+        }
+
+        <div class="cuadricula-formulario">
+          <div class="campo">
+            <label for="acceso-usuario">Usuario técnico de solo lectura</label>
+            <input
+              id="acceso-usuario"
+              type="text"
+              formControlName="usuarioAcceso"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+            />
+            @if (
+              formulario.controls.usuarioAcceso.touched && formulario.controls.usuarioAcceso.invalid
+            ) {
+              <p class="mensaje-campo">Ingresa un usuario de hasta 120 caracteres.</p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="acceso-secreto">Nuevo secreto de acceso</label>
+            <input
+              id="acceso-secreto"
+              type="password"
+              formControlName="secretoAcceso"
+              autocomplete="new-password"
+              maxlength="256"
+            />
+            @if (
+              formulario.controls.secretoAcceso.touched && formulario.controls.secretoAcceso.invalid
+            ) {
+              <p class="mensaje-campo">Ingresa un secreto de hasta 256 caracteres.</p>
+            }
+          </div>
+
+          <div class="campo campo--ancho">
+            <label for="acceso-algoritmo">Algoritmo de la clave del host</label>
+            <input
+              id="acceso-algoritmo"
+              type="text"
+              formControlName="algoritmoClaveHost"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              placeholder="ssh-ed25519"
+            />
+            <p class="ayuda-campo">
+              Debe coincidir con el algoritmo de la clave verificada en el equipo.
+            </p>
+          </div>
+
+          <div class="campo campo--ancho">
+            <label for="acceso-huella">Huella SHA-256 de la clave del host</label>
+            <input
+              id="acceso-huella"
+              class="dato-monoespaciado"
+              type="text"
+              formControlName="huellaClaveHost"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="64"
+              placeholder="64 caracteres hexadecimales"
+            />
+            @if (
+              formulario.controls.huellaClaveHost.touched &&
+              formulario.controls.huellaClaveHost.invalid
+            ) {
+              <p class="mensaje-campo">
+                Ingresa exactamente 64 caracteres hexadecimales, sin espacios ni separadores.
+              </p>
+            }
+          </div>
+        </div>
+
+        <label class="confirmacion-huella">
+          <input type="checkbox" formControlName="huellaClaveHostConfirmada" />
+          <span>
+            Confirmo que obtuve y comparé esta huella por un canal confiable independiente de la
+            conexión que configurará RedDiff.
+          </span>
+        </label>
+        @if (
+          formulario.controls.huellaClaveHostConfirmada.touched &&
+          formulario.controls.huellaClaveHostConfirmada.invalid
+        ) {
+          <p class="mensaje-campo mensaje-campo--confirmacion">
+            La verificación explícita de la clave del host es obligatoria.
+          </p>
+        }
+
+        <div class="nota-seguridad">
+          <strong>Tratamiento del secreto</strong>
+          <p>
+            Se enviará únicamente a la API autenticada, se protegerá antes de guardarse y no
+            aparecerá en respuestas, auditorías ni listados. Esta etapa no intenta conectarse al
+            dispositivo.
+          </p>
+        </div>
+
+        <footer class="dialogo__acciones">
+          <button class="boton boton--secundario" type="button" (click)="cerrar()">Cancelar</button>
+          <button class="boton boton--primario" type="submit" [disabled]="guardando()">
+            {{
+              guardando()
+                ? 'Protegiendo…'
+                : detalle()?.configurado
+                  ? 'Reemplazar acceso'
+                  : 'Guardar acceso'
+            }}
+          </button>
+        </footer>
+      </form>
+    }
+  </section>
+</div>
