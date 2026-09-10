@@ -26,7 +26,9 @@ builder.Services.AgregarInfraestructura(builder.Configuration, builder.Environme
 builder.Services.AgregarSeguridad(builder.Configuration, builder.Environment);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ProcesadorArchivoConfiguracion>();
+builder.Services.AddSingleton(OpcionesCapturaRemota.Predeterminadas);
 builder.Services.AddScoped<ServicioAutenticacion>();
+builder.Services.AddScoped<ServicioCapturaRemota>();
 builder.Services.AddScoped<ServicioCapturasConfiguracion>();
 builder.Services.AddScoped<ServicioGestionDispositivos>();
 builder.Services.AddScoped<ServicioGestionUsuarios>();

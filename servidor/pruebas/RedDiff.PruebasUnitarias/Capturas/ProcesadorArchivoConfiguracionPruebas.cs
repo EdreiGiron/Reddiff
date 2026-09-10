@@ -70,4 +70,29 @@ public sealed class ProcesadorArchivoConfiguracionPruebas
 
         Assert.True(resultado.Exitoso);
     }
+
+    [Fact]
+    public void ProcesarContenidoRemoto_NormalizaYCalculaHuella()
+    {
+        var resultado = procesador.ProcesarContenidoRemoto(
+            "hostname remoto\r\ninterface Gi0/1\r\n");
+
+        Assert.True(resultado.Exitoso);
+        Assert.Equal("hostname remoto\ninterface Gi0/1\n", resultado.Valor!.Contenido);
+        string hashEsperado = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(resultado.Valor.Contenido)))
+            .ToLowerInvariant();
+        Assert.Equal(hashEsperado, resultado.Valor.Hash);
+    }
+
+    [Theory]
+    [InlineData("enable secret clave-visible")]
+    [InlineData("snmp-server community comunidad-visible RO")]
+    public void ProcesarContenidoRemoto_RechazaCredencialesSinEnmascarar(string contenido)
+    {
+        var resultado = procesador.ProcesarContenidoRemoto(contenido);
+
+        Assert.False(resultado.Exitoso);
+        Assert.Contains("no será almacenada", resultado.Error!.Mensaje);
+    }
 }

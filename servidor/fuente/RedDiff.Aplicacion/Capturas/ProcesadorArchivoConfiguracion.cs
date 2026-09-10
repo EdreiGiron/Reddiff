@@ -103,6 +103,60 @@ public sealed partial class ProcesadorArchivoConfiguracion
                 comentarioCompleto));
     }
 
+    public ResultadoOperacion<ContenidoConfiguracionProcesado> ProcesarContenidoRemoto(
+        string? contenido)
+    {
+        if (string.IsNullOrWhiteSpace(contenido))
+        {
+            return FallarContenidoRemoto(
+                "El dispositivo no devolvió una configuración utilizable.");
+        }
+
+        string contenidoNormalizado;
+        int tamanoBytes;
+
+        try
+        {
+            contenidoNormalizado = NormalizarParaIntegridad(contenido);
+            tamanoBytes = Utf8Estricto.GetByteCount(contenidoNormalizado);
+        }
+        catch (EncoderFallbackException)
+        {
+            return FallarContenidoRemoto(
+                "La respuesta remota no contiene texto UTF-8 válido.");
+        }
+        catch (ArgumentException)
+        {
+            return FallarContenidoRemoto(
+                "La respuesta remota no contiene texto Unicode válido.");
+        }
+
+        if (tamanoBytes > TamanoMaximoBytes)
+        {
+            return FallarContenidoRemoto(
+                "La configuración remota supera el límite de 5 MB.");
+        }
+
+        if (contenidoNormalizado.Any(EsCaracterNoPermitido))
+        {
+            return FallarContenidoRemoto(
+                "La respuesta remota contiene caracteres de control no permitidos.");
+        }
+
+        if (ContieneCredencialSinEnmascarar(contenidoNormalizado))
+        {
+            return FallarContenidoRemoto(
+                "La configuración obtenida contiene credenciales o comunidades sin enmascarar y no será almacenada.");
+        }
+
+        string hash = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(contenidoNormalizado)))
+            .ToLowerInvariant();
+
+        return ResultadoOperacion<ContenidoConfiguracionProcesado>.Correcto(
+            new ContenidoConfiguracionProcesado(contenidoNormalizado, hash));
+    }
+
     public static string NormalizarParaIntegridad(string contenido)
     {
         ArgumentNullException.ThrowIfNull(contenido);
@@ -144,6 +198,14 @@ public sealed partial class ProcesadorArchivoConfiguracion
     private static ResultadoOperacion<ArchivoConfiguracionProcesado> Fallar(string mensaje)
     {
         return ResultadoOperacion<ArchivoConfiguracionProcesado>.Fallido(
+            CodigosErrorOperacion.Validacion,
+            mensaje);
+    }
+
+    private static ResultadoOperacion<ContenidoConfiguracionProcesado> FallarContenidoRemoto(
+        string mensaje)
+    {
+        return ResultadoOperacion<ContenidoConfiguracionProcesado>.Fallido(
             CodigosErrorOperacion.Validacion,
             mensaje);
     }

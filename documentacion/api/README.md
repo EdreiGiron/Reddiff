@@ -8,6 +8,6 @@ Los endpoints iniciales de autenticación, roles y usuarios se documentan en [au
 
 El contrato del inventario y su matriz de permisos se describen en [dispositivos](dispositivos.md).
 
-La carga controlada de archivos, las capturas y el historial de versiones se describen en [capturas y versiones](capturas-y-versiones.md).
+La carga controlada de archivos, la base de captura remota, las capturas y el historial de versiones se describen en [capturas y versiones](capturas-y-versiones.md).
 
 El cliente consume rutas relativas bajo `/api`. Durante el desarrollo, Angular las dirige a `http://localhost:5088` mediante `cliente/proxy.conf.json`; esta configuración no forma parte de la compilación de producción.

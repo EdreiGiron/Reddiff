@@ -9,4 +9,6 @@ public static class CodigosErrorOperacion
     public const string Conflicto = "conflicto";
 
     public const string Prohibido = "prohibido";
+
+    public const string NoDisponible = "no_disponible";
 }

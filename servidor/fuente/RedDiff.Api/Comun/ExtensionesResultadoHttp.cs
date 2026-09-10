@@ -17,6 +17,7 @@ public static class ExtensionesResultadoHttp
             CodigosErrorOperacion.NoEncontrado => StatusCodes.Status404NotFound,
             CodigosErrorOperacion.Conflicto => StatusCodes.Status409Conflict,
             CodigosErrorOperacion.Prohibido => StatusCodes.Status403Forbidden,
+            CodigosErrorOperacion.NoDisponible => StatusCodes.Status503ServiceUnavailable,
             _ => StatusCodes.Status400BadRequest
         };
 

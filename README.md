@@ -2,7 +2,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario y carga controlada de configuraciones implementados. El administrador puede configurar, reemplazar y revocar el acceso remoto protegido; los conectores todavía no están habilitados. La solución aún no debe utilizarse en producción.
+> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario y carga controlada de configuraciones implementados. La captura remota bajo demanda dispone de una orquestación segura validada con conectores simulados; los adaptadores de red reales todavía no están habilitados. La solución aún no debe utilizarse en producción.
 
 ## Tecnologías principales
 
@@ -92,6 +92,8 @@ El inventario admite SSH y NETCONF como canales de obtención de configuración,
 El acceso remoto exige un secreto cifrado y la huella SHA-256 previamente aprobada de la clave del host. Su administración no devuelve el secreto almacenado y está limitada al rol `Administrador`. El diseño y sus límites se describen en [documentacion/seguridad/acceso-remoto-dispositivos.md](documentacion/seguridad/acceso-remoto-dispositivos.md).
 
 Los usuarios autenticados pueden cargar archivos de configuración previamente enmascarados en dispositivos autorizados y consultar su historial inmutable y huellas SHA-256. Consulte [documentacion/api/capturas-y-versiones.md](documentacion/api/capturas-y-versiones.md).
+
+La base de captura remota comprueba autorización, acceso protegido, conector exacto, límite de tiempo, identidad del host y contenido antes de crear una versión. En esta etapa solo las pruebas registran conectores simulados; una ejecución local normal responde que el adaptador todavía no está habilitado y no intenta abrir la red.
 
 ## Cliente web local
 

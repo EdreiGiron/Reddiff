@@ -7,7 +7,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using RedDiff.Aplicacion.Abstracciones.Red;
 using RedDiff.Aplicacion.Abstracciones.Seguridad;
+using RedDiff.Dominio.Enumeraciones;
 using RedDiff.Dominio.Entidades.Identidad;
 using RedDiff.Infraestructura.Persistencia;
 
@@ -50,6 +52,10 @@ public sealed class FabricaApiPruebas : WebApplicationFactory<Program>
             servicios.RemoveAll<ContextoRedDiff>();
             servicios.AddDbContext<ContextoRedDiff>(opciones =>
                 opciones.UseInMemoryDatabase(nombreBaseDatos));
+            servicios.AddSingleton<IConectorCapturaRemota>(
+                new ConectorCapturaRemotaSimulado(ProtocoloConexion.Ssh));
+            servicios.AddSingleton<IConectorCapturaRemota>(
+                new ConectorCapturaRemotaSimulado(ProtocoloConexion.Netconf));
         });
     }
 

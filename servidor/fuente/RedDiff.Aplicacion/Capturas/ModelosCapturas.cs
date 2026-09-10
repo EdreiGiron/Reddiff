@@ -6,6 +6,8 @@ public sealed record CargarArchivoConfiguracionSolicitud(
     byte[] Contenido,
     string? Comentario);
 
+public sealed record CapturarConfiguracionRemotaSolicitud(long DispositivoId);
+
 public sealed record CapturaResumen(
     long Id,
     long DispositivoId,
@@ -51,8 +53,16 @@ public sealed record CargaArchivoResultado(
     CapturaResumen Captura,
     VersionConfiguracionResumen Version);
 
+public sealed record CapturaRemotaResultado(
+    CapturaResumen Captura,
+    VersionConfiguracionResumen Version);
+
 public sealed record ArchivoConfiguracionProcesado(
     string NombreArchivo,
     string Contenido,
     string Hash,
     string Comentario);
+
+public sealed record ContenidoConfiguracionProcesado(
+    string Contenido,
+    string Hash);

@@ -1,8 +1,8 @@
 # Seguridad del acceso remoto a dispositivos
 
-## Alcance de esta etapa
+## Alcance actual
 
-El modelo, la migración incremental y la administración web preparan las condiciones de seguridad necesarias para una captura remota posterior mediante SSH o NETCONF. Configurar, reemplazar o revocar el acceso no abre conexiones ni solicita capturas. La API solo devuelve metadatos seguros y nunca el secreto almacenado ni su representación protegida.
+El modelo, la migración incremental y la administración web preparan las condiciones de seguridad necesarias para capturas mediante SSH o NETCONF. La orquestación de la captura bajo demanda ya se encuentra implementada y validada mediante conectores simulados. El servidor normal todavía no registra adaptadores reales, por lo que no abre conexiones de red en esta etapa.
 
 La captura posterior será exclusivamente de lectura. No se incorporarán operaciones para entrar en modo de configuración, aplicar cambios ni ejecutar comandos arbitrarios.
 
@@ -24,7 +24,7 @@ La consulta y las mutaciones están limitadas al rol `Administrador`. Las mutaci
 
 ## Confianza del equipo
 
-La aplicación no aceptará automáticamente una clave desconocida presentada por el equipo. Antes de guardar el acceso, un administrador deberá obtener la huella SHA-256 por un canal confiable y aprobarla explícitamente. El futuro conector comparará la clave recibida durante la negociación con ese valor antes de autenticar.
+La aplicación no aceptará automáticamente una clave desconocida presentada por el equipo. Antes de guardar el acceso, un administrador deberá obtener la huella SHA-256 por un canal confiable y aprobarla explícitamente. El contrato del conector exige comparar la clave recibida durante la negociación con ese valor antes de autenticar; una diferencia se trata como un conflicto de identidad y no genera una versión.
 
 Cambiar el host, puerto o protocolo elimina el bloque completo. Revocar la autorización o desactivar el dispositivo también borra el acceso. De esa manera una credencial y una decisión de confianza no se reutilizan accidentalmente en otro punto de conexión.
 
@@ -45,12 +45,18 @@ Desde **Dispositivos**, un administrador puede:
 
 El formulario requiere una confirmación explícita de que la huella se obtuvo por un canal confiable. El secreto se limpia del control tanto después de una respuesta correcta como después de un error.
 
+## Orquestación segura
+
+La solicitud remota selecciona el conector por el protocolo configurado, descifra temporalmente el secreto, aplica un límite de 15 segundos y permite cancelar la operación. El contenido recibido atraviesa las mismas reglas de normalización, tamaño e identificación de datos sensibles utilizadas para archivos. Solo después de aprobarlas se crea una versión inmutable con su huella SHA-256.
+
+Los fallos de conexión, autenticación, tiempo, identidad y contenido quedan representados mediante mensajes controlados. Las auditorías no almacenan excepciones de bibliotecas, secretos, configuraciones ni respuestas técnicas completas.
+
 ## Límites pendientes
 
 Esta etapa no incluye:
 
-- bibliotecas o conectores SSH y NETCONF;
+- adaptadores reales de SSH y NETCONF;
 - ejecución de capturas contra equipos reales;
 - recepción de avisos SNMP o Syslog.
 
-Cada elemento se incorporará en un bloque posterior con pruebas separadas. Ningún secreto real ni huella de producción debe utilizarse durante las pruebas iniciales.
+Los conectores simulados solo existen en el proyecto de pruebas y no se registran en la aplicación normal. Los adaptadores reales se incorporarán en un bloque posterior con pruebas separadas. Ningún secreto real ni huella de producción debe utilizarse durante las pruebas iniciales.

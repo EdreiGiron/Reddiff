@@ -9,4 +9,6 @@ La calidad se verificará en varios niveles:
 - pruebas de extremo a extremo para los recorridos principales cuando exista el primer incremento funcional;
 - revisiones de seguridad y dependencias en la integración continua.
 
+Los adaptadores externos deben probarse primero mediante dobles controlados. Estos dobles viven únicamente en los proyectos de pruebas y no pueden registrarse en la aplicación ejecutable. Una prueba contra equipos reales requiere un laboratorio autorizado o un escenario aislado en GNS3.
+
 Cada requisito funcional deberá relacionarse con al menos un criterio de aceptación y una evidencia de prueba.

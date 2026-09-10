@@ -11,7 +11,9 @@ namespace RedDiff.Api.Controladores;
 [Authorize]
 [Route("api/capturas")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class CapturasController(ServicioCapturasConfiguracion servicio) : ControllerBase
+public sealed class CapturasController(
+    ServicioCapturasConfiguracion servicio,
+    ServicioCapturaRemota servicioCapturaRemota) : ControllerBase
 {
     private const long LimiteSolicitudBytes = ProcesadorArchivoConfiguracion.TamanoMaximoBytes
         + 250_000;
@@ -66,6 +68,26 @@ public sealed class CapturasController(ServicioCapturasConfiguracion servicio) :
             ObtenerUsuarioId(),
             solicitud,
             cancellationToken);
+
+        return resultado.Exitoso
+            ? CreatedAtAction(
+                nameof(VersionesConfiguracionController.Obtener),
+                "VersionesConfiguracion",
+                new { versionId = resultado.Valor!.Version.Id },
+                resultado.Valor)
+            : this.ComoProblema(resultado);
+    }
+
+    [HttpPost("remota")]
+    public async Task<IActionResult> CapturarRemotamente(
+        [FromBody] CapturarConfiguracionRemotaSolicitud solicitud,
+        CancellationToken cancellationToken)
+    {
+        ResultadoOperacion<CapturaRemotaResultado> resultado =
+            await servicioCapturaRemota.CapturarAsync(
+                ObtenerUsuarioId(),
+                solicitud.DispositivoId,
+                cancellationToken);
 
         return resultado.Exitoso
             ? CreatedAtAction(
