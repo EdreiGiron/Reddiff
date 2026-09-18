@@ -2,7 +2,7 @@
 
 ## Alcance
 
-El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente, consultar el inventario, cargar configuraciones enmascaradas, solicitar capturas SSH y revisar el historial. El rol `Administrador` también puede gestionar usuarios, dispositivos y su acceso remoto protegido. El rol `Tecnico` puede operar capturas y consultar los equipos, pero no modificar el inventario, administrar credenciales ni abrir la administración de usuarios.
+El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente, consultar el inventario, cargar configuraciones enmascaradas, solicitar capturas SSH, revisar el historial y comparar dos versiones del mismo dispositivo. El rol `Administrador` también puede gestionar usuarios, dispositivos y su acceso remoto protegido. El rol `Tecnico` puede operar capturas y comparaciones, pero no modificar el inventario, administrar credenciales ni abrir la administración de usuarios.
 
 ## Requisitos previos
 
@@ -51,7 +51,11 @@ El servidor de desarrollo de Angular utiliza `proxy.conf.json` para reenviar `/a
 16. Confirme que el técnico vea **Dispositivos** y **Capturas**, pero no **Usuarios** ni controles de modificación del equipo o sus credenciales.
 17. Confirme que el técnico pueda cargar un archivo enmascarado en el dispositivo autorizado.
 18. Escriba `http://localhost:4200/usuarios` y confirme que el sistema lo devuelva al inicio.
-19. Cierre la sesión técnica, ingrese nuevamente como administrador y desactive la cuenta de prueba.
+19. Abra **Comparar**, seleccione el dispositivo que ya tiene dos versiones y confirme que el origen sea la versión 1 y el destino la versión 2.
+20. Ejecute la comparación y confirme que las líneas nuevas, retiradas o sustituidas aparezcan en columnas separadas y con su tipo correspondiente.
+21. Vuelva a abrir el resultado desde **Comparaciones recientes** y confirme que conserva las mismas diferencias.
+22. Compruebe que la pantalla no ofrezca acciones para aplicar la configuración al dispositivo.
+23. Cierre la sesión técnica, ingrese nuevamente como administrador y desactive la cuenta de prueba.
 
 La prueba de una conexión SSH real se realiza aparte y únicamente contra GNS3 o un equipo autorizado. Siga [captura SSH en laboratorio](captura-ssh-laboratorio.md) para obtener y verificar la huella, preparar una cuenta de consulta y solicitar la captura desde la nueva tarjeta **Captura SSH**.
 
@@ -67,7 +71,7 @@ npm test -- --watch=false
 npx prettier --check src angular.json proxy.conf.json README.md
 ```
 
-Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso, la restricción que impide desactivar la propia cuenta y la presentación del inventario y del historial según el rol. También verifican que el formulario no reciba el secreto persistido, limpie el secreto nuevo después de enviarlo y registre el resultado de una captura SSH sin reemplazar versiones anteriores.
+Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso, la restricción que impide desactivar la propia cuenta y la presentación del inventario y del historial según el rol. También verifican que el formulario no reciba el secreto persistido, limpie el secreto nuevo después de enviarlo, registre el resultado de una captura SSH sin reemplazar versiones anteriores y muestre el detalle de una comparación diferencial.
 
 ## Solución de problemas
 

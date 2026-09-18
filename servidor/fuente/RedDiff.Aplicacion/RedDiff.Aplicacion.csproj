@@ -4,6 +4,10 @@
     <ProjectReference Include="..\RedDiff.Dominio\RedDiff.Dominio.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="DiffPlex" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

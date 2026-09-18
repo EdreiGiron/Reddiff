@@ -42,6 +42,14 @@ export const rutasAplicacion: Routes = [
         title: 'RedDiff | Capturas y versiones',
       },
       {
+        path: 'comparaciones',
+        loadComponent: () =>
+          import('./modulos/comparaciones/pagina-comparaciones').then(
+            (modulo) => modulo.PaginaComparaciones,
+          ),
+        title: 'RedDiff | Comparación diferencial',
+      },
+      {
         path: 'usuarios',
         canActivate: [guardianAdministrador],
         loadComponent: () =>

@@ -1,0 +1,231 @@
+<section class="pagina" aria-labelledby="titulo-comparaciones">
+  <header class="encabezado">
+    <div>
+      <p class="sobrelinea">Diagnóstico de cambios</p>
+      <h1 id="titulo-comparaciones">Comparación diferencial</h1>
+      <p>Contrasta dos versiones del mismo dispositivo y localiza sus cambios línea por línea.</p>
+    </div>
+    <span class="insignia">Solo análisis</span>
+  </header>
+
+  @if (mensajeExito()) {
+    <div class="alerta alerta--exito" role="status">✓ {{ mensajeExito() }}</div>
+  }
+  @if (mensajeError()) {
+    <div class="alerta alerta--error" role="alert">{{ mensajeError() }}</div>
+  }
+
+  <section class="panel seleccion" aria-labelledby="titulo-seleccion">
+    <header class="panel__encabezado">
+      <div>
+        <p class="sobrelinea">Selección controlada</p>
+        <h2 id="titulo-seleccion">Versiones que deseas comparar</h2>
+      </div>
+      <span class="indicador-versiones" aria-hidden="true">v1 ⇄ v2</span>
+    </header>
+
+    @if (cargando()) {
+      <div class="estado-vacio" role="status"><span class="cargador"></span>Cargando…</div>
+    } @else if (dispositivosComparables().length) {
+      <form [formGroup]="formulario" (ngSubmit)="comparar()" novalidate>
+        <label class="campo campo--dispositivo">
+          <span>Dispositivo con historial</span>
+          <select formControlName="dispositivoId" (change)="cambiarDispositivo()">
+            @for (dispositivo of dispositivosComparables(); track dispositivo.id) {
+              <option [ngValue]="dispositivo.id">
+                {{ dispositivo.nombre }} · {{ dispositivo.cantidadVersiones }} versiones
+              </option>
+            }
+          </select>
+        </label>
+
+        <div class="selector-versiones">
+          <label class="campo tarjeta-version tarjeta-version--origen">
+            <span>Versión de origen</span>
+            <select formControlName="versionOrigenId">
+              @for (version of versionesDispositivo(); track version.id) {
+                <option [ngValue]="version.id">
+                  v{{ version.numero }} · {{ version.capturadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                </option>
+              }
+            </select>
+            <small>Estado anterior utilizado como referencia.</small>
+          </label>
+
+          <span class="flecha" aria-hidden="true">→</span>
+
+          <label class="campo tarjeta-version tarjeta-version--destino">
+            <span>Versión de destino</span>
+            <select formControlName="versionDestinoId">
+              @for (version of versionesDispositivo(); track version.id) {
+                <option [ngValue]="version.id">
+                  v{{ version.numero }} · {{ version.capturadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                </option>
+              }
+            </select>
+            <small>Estado posterior que se contrastará.</small>
+          </label>
+        </div>
+
+        <div class="pie-seleccion">
+          <p>
+            La comparación conserva evidencia, pero no determina si el cambio es correcto ni
+            modifica la configuración del equipo.
+          </p>
+          <button
+            class="boton boton--primario"
+            data-testid="comparar-versiones"
+            type="submit"
+            [disabled]="comparando()"
+          >
+            {{ comparando() ? 'Comparando…' : 'Comparar versiones' }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <div class="estado-vacio">
+        <strong>Aún no hay un dispositivo con dos versiones</strong>
+        <p>Registra otra captura o carga para habilitar la comparación diferencial.</p>
+      </div>
+    }
+  </section>
+
+  @if (resultado(); as comparacion) {
+    <section class="resultado" aria-labelledby="titulo-resultado">
+      <header class="resultado__encabezado">
+        <div>
+          <p class="sobrelinea">{{ comparacion.dispositivo }}</p>
+          <h2 id="titulo-resultado">
+            v{{ comparacion.versionOrigen.numero }} → v{{ comparacion.versionDestino.numero }}
+          </h2>
+          <small>
+            Comparada el {{ comparacion.fecha | date: 'dd/MM/yyyy HH:mm:ss' }} por
+            {{ comparacion.usuario }}
+          </small>
+        </div>
+        <button
+          type="button"
+          class="boton-cerrar"
+          (click)="cerrarResultado()"
+          aria-label="Cerrar resultado"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="metricas" aria-label="Resumen de diferencias">
+        <div class="metrica metrica--agregada">
+          <strong>{{ comparacion.agregadas }}</strong
+          ><span>Agregadas</span>
+        </div>
+        <div class="metrica metrica--eliminada">
+          <strong>{{ comparacion.eliminadas }}</strong
+          ><span>Eliminadas</span>
+        </div>
+        <div class="metrica metrica--modificada">
+          <strong>{{ comparacion.modificadas }}</strong
+          ><span>Modificadas</span>
+        </div>
+      </div>
+
+      @if (comparacion.diferencias.length) {
+        <div class="tabla-diferencias">
+          <table>
+            <thead>
+              <tr>
+                <th>Cambio</th>
+                <th>Tipo</th>
+                <th>Versión {{ comparacion.versionOrigen.numero }}</th>
+                <th>Versión {{ comparacion.versionDestino.numero }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (diferencia of comparacion.diferencias; track $index) {
+                <tr [attr.data-tipo]="diferencia.tipo">
+                  <td data-label="Cambio">
+                    <strong>#{{ diferencia.linea }}</strong>
+                  </td>
+                  <td data-label="Tipo">
+                    <span class="tipo-diferencia">{{ etiquetaTipo(diferencia.tipo) }}</span>
+                  </td>
+                  <td data-label="Versión anterior">
+                    @if (diferencia.textoAnterior !== null) {
+                      <code>{{ diferencia.textoAnterior || ' ' }}</code>
+                    } @else {
+                      <span class="sin-linea">—</span>
+                    }
+                  </td>
+                  <td data-label="Versión nueva">
+                    @if (diferencia.textoNuevo !== null) {
+                      <code>{{ diferencia.textoNuevo || ' ' }}</code>
+                    } @else {
+                      <span class="sin-linea">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="sin-cambios">
+          <strong>Sin diferencias de contenido</strong>
+          <p>Las dos versiones seleccionadas contienen exactamente las mismas líneas.</p>
+        </div>
+      }
+    </section>
+  }
+
+  <section class="historial" aria-labelledby="titulo-historial">
+    <header class="historial__encabezado">
+      <div>
+        <p class="sobrelinea">Evidencia conservada</p>
+        <h2 id="titulo-historial">Comparaciones recientes</h2>
+      </div>
+      <span>{{ historialVisible().length }} registros</span>
+    </header>
+
+    @if (!cargando() && historialVisible().length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th>Comparación</th>
+              <th>Versiones</th>
+              <th>Fecha y usuario</th>
+              <th>Diferencias</th>
+              <th><span class="solo-lectura">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (comparacion of historialVisible(); track comparacion.id) {
+              <tr>
+                <td data-label="Comparación">
+                  <strong>#{{ comparacion.id }}</strong>
+                </td>
+                <td data-label="Versiones">
+                  v{{ comparacion.versionOrigen.numero }} → v{{ comparacion.versionDestino.numero }}
+                </td>
+                <td data-label="Fecha y usuario">
+                  <strong>{{ comparacion.fecha | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                  <small>{{ comparacion.usuario }}</small>
+                </td>
+                <td data-label="Diferencias">{{ totalCambios(comparacion) }}</td>
+                <td>
+                  <button class="enlace" type="button" (click)="abrirComparacion(comparacion.id)">
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!cargando()) {
+      <div class="estado-vacio estado-vacio--historial">
+        <strong>No hay comparaciones registradas</strong>
+        <p>La primera comparación válida quedará disponible en este historial.</p>
+      </div>
+    }
+  </section>
+</section>

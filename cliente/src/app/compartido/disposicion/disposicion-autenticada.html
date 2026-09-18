@@ -36,6 +36,9 @@
       <a routerLink="/capturas" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
         Capturas
       </a>
+      <a routerLink="/comparaciones" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
+        Comparar
+      </a>
       @if (servicioSesion.esAdministrador()) {
         <a routerLink="/usuarios" routerLinkActive="enlace-activo" (click)="cerrarMenu()">
           Usuarios
