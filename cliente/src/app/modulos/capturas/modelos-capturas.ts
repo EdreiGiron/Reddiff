@@ -38,3 +38,8 @@ export interface CargaArchivoResultado {
   captura: CapturaResumen;
   version: VersionConfiguracionResumen;
 }
+
+export interface CapturaRemotaResultado {
+  captura: CapturaResumen;
+  version: VersionConfiguracionResumen;
+}

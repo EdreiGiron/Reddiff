@@ -52,6 +52,7 @@ public sealed class FabricaApiPruebas : WebApplicationFactory<Program>
             servicios.RemoveAll<ContextoRedDiff>();
             servicios.AddDbContext<ContextoRedDiff>(opciones =>
                 opciones.UseInMemoryDatabase(nombreBaseDatos));
+            servicios.RemoveAll<IConectorCapturaRemota>();
             servicios.AddSingleton<IConectorCapturaRemota>(
                 new ConectorCapturaRemotaSimulado(ProtocoloConexion.Ssh));
             servicios.AddSingleton<IConectorCapturaRemota>(

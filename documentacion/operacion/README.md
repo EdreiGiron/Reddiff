@@ -16,3 +16,4 @@ Procedimientos disponibles:
 - [Base de datos local con Docker](base-datos-local.md).
 - [API local y acceso a PostgreSQL](api-local.md).
 - [Cliente web local](cliente-web-local.md).
+- [Captura SSH en un laboratorio autorizado](captura-ssh-laboratorio.md).

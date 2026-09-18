@@ -21,3 +21,5 @@ El bloque de acceso remoto protegido ya existe en el dominio y en PostgreSQL. An
 El navegador puede conocer si existe acceso y mostrar sus metadatos de confianza, pero no puede recuperar el secreto almacenado. Un reemplazo completo evita mezclar una credencial nueva con una decisión de confianza anterior. Cada mutación deja evidencia de quién la realizó y sobre qué dispositivo, sin conservar material sensible.
 
 La validez de la credencial y la comparación efectiva de la clave del host solo podrán comprobarse al incorporar los conectores de lectura. Esa etapa deberá consumir el secreto durante el menor tiempo posible, limitar los comandos permitidos y registrar resultados sin contenido sensible.
+
+El adaptador SSH incorporado posteriormente cumple esta condición con validación previa de la clave del host, un comando fijo y saneamiento del resultado antes de persistirlo.

@@ -99,15 +99,17 @@
             @for (dispositivo of dispositivosFiltrados(); track dispositivo.id) {
               <tr>
                 <td data-label="Dispositivo">
-                  <span class="icono-dispositivo" aria-hidden="true">D</span>
-                  <span class="identidad">
-                    <strong>{{ dispositivo.nombre }}</strong>
-                    <small>
-                      {{ dispositivo.tipo }}
-                      @if (dispositivo.modelo) {
-                        · {{ dispositivo.modelo }}
-                      }
-                    </small>
+                  <span class="celda-dispositivo">
+                    <span class="icono-dispositivo" aria-hidden="true">D</span>
+                    <span class="identidad">
+                      <strong>{{ dispositivo.nombre }}</strong>
+                      <small>
+                        {{ dispositivo.tipo }}
+                        @if (dispositivo.modelo) {
+                          · {{ dispositivo.modelo }}
+                        }
+                      </small>
+                    </span>
                   </span>
                 </td>
                 <td data-label="Conexión">

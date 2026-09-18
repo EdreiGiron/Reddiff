@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   CapturaResumen,
+  CapturaRemotaResultado,
   CargaArchivoResultado,
   VersionConfiguracionDetalle,
   VersionConfiguracionResumen,
@@ -41,6 +42,10 @@ export class ServicioCapturas {
     }
 
     return this.http.post<CargaArchivoResultado>('/api/capturas/archivo', formulario);
+  }
+
+  capturarRemotamente(dispositivoId: number): Observable<CapturaRemotaResultado> {
+    return this.http.post<CapturaRemotaResultado>('/api/capturas/remota', { dispositivoId });
   }
 
   private parametrosDispositivo(dispositivoId?: number): HttpParams {

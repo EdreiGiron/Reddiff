@@ -5,9 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using RedDiff.Aplicacion.Abstracciones.Persistencia;
+using RedDiff.Aplicacion.Abstracciones.Red;
 using RedDiff.Aplicacion.Abstracciones.Seguridad;
 using RedDiff.Infraestructura.Persistencia;
 using RedDiff.Infraestructura.Persistencia.Repositorios;
+using RedDiff.Infraestructura.Red.Ssh;
 using RedDiff.Infraestructura.Seguridad;
 
 namespace RedDiff.Infraestructura;
@@ -92,6 +94,7 @@ public static class ConfiguracionServicios
         servicios.AddSingleton<
             IProtectorSecretoDispositivo,
             ProtectorSecretoDispositivoDataProtection>();
+        servicios.AddSingleton<IConectorCapturaRemota, ConectorCapturaSsh>();
 
         return servicios;
     }

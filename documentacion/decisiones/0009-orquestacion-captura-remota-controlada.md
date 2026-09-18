@@ -14,10 +14,12 @@ El inventario ya conserva el protocolo, punto de conexión, secreto protegido y 
 - Exigir al adaptador que valide algoritmo y huella de la clave del host antes de autenticar.
 - Limitar cada operación a 15 segundos y propagar su cancelación.
 - Descifrar el secreto solo después de aprobar todas las precondiciones y no incorporarlo a resultados o auditorías.
-- Rechazar respuestas vacías, mayores de 5 MB, con caracteres no permitidos o datos sensibles reconocibles.
+- Rechazar respuestas vacías, mayores de 5 MB o con caracteres no permitidos, y aplicar la política vigente de saneamiento a los datos sensibles reconocibles.
 - Crear una versión únicamente cuando transporte y contenido sean válidos; conservar como fallida la captura iniciada si alguno falla.
 - Habilitar conectores simulados solo dentro de las pruebas de integración.
 - No aceptar comandos, filtros o cargas operativas proporcionados por el usuario.
+
+La regla sobre contenido sensible fue refinada posteriormente por la [ADR 0011](0011-enmascaramiento-automatico-contenido-remoto.md): los patrones reconocidos se eliminan automáticamente del resultado remoto y la versión conserva únicamente el contenido saneado.
 
 ## Consecuencias
 

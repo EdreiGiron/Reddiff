@@ -2,7 +2,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario y carga controlada de configuraciones implementados. La captura remota bajo demanda dispone de una orquestación segura validada con conectores simulados; los adaptadores de red reales todavía no están habilitados. La solución aún no debe utilizarse en producción.
+> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario, carga controlada y captura SSH de configuraciones implementados. NETCONF y la recepción de eventos permanecen pendientes. La solución aún no debe utilizarse en producción.
 
 ## Tecnologías principales
 
@@ -93,7 +93,7 @@ El acceso remoto exige un secreto cifrado y la huella SHA-256 previamente aproba
 
 Los usuarios autenticados pueden cargar archivos de configuración previamente enmascarados en dispositivos autorizados y consultar su historial inmutable y huellas SHA-256. Consulte [documentacion/api/capturas-y-versiones.md](documentacion/api/capturas-y-versiones.md).
 
-La base de captura remota comprueba autorización, acceso protegido, conector exacto, límite de tiempo, identidad del host y contenido antes de crear una versión. En esta etapa solo las pruebas registran conectores simulados; una ejecución local normal responde que el adaptador todavía no está habilitado y no intenta abrir la red.
+La captura remota mediante SSH comprueba autorización, acceso protegido, límite de tiempo, identidad criptográfica del host y contenido antes de crear una versión. El adaptador utiliza una sesión controlada que solo desactiva la paginación y ejecuta `show running-config view full`; no admite comandos proporcionados por el usuario ni modifica la configuración del equipo. NETCONF todavía responde como no disponible. La prueba controlada en GNS3 se describe en [documentacion/operacion/captura-ssh-laboratorio.md](documentacion/operacion/captura-ssh-laboratorio.md).
 
 ## Cliente web local
 

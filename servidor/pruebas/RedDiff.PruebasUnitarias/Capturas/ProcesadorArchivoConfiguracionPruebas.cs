@@ -86,13 +86,61 @@ public sealed class ProcesadorArchivoConfiguracionPruebas
     }
 
     [Theory]
-    [InlineData("enable secret clave-visible")]
-    [InlineData("snmp-server community comunidad-visible RO")]
-    public void ProcesarContenidoRemoto_RechazaCredencialesSinEnmascarar(string contenido)
+    [InlineData("enable secret clave-visible", "clave-visible")]
+    [InlineData(
+        "username operador privilege 15 secret 9 hash-visible",
+        "hash-visible")]
+    [InlineData("snmp-server community comunidad-visible RO", "comunidad-visible")]
+    [InlineData("radius-server key clave-radius", "clave-radius")]
+    [InlineData("neighbor 192.0.2.1 password clave-bgp", "clave-bgp")]
+    [InlineData("parser view REDDIFF\n secret 5 hash-vista", "hash-vista")]
+    public void ProcesarContenidoRemoto_EnmascaraDatosSensibles(
+        string contenido,
+        string valorSensible)
     {
         var resultado = procesador.ProcesarContenidoRemoto(contenido);
 
+        Assert.True(resultado.Exitoso);
+        Assert.DoesNotContain(
+            valorSensible,
+            resultado.Valor!.Contenido,
+            StringComparison.Ordinal);
+        Assert.Contains("[PROTEGIDO", resultado.Valor.Contenido, StringComparison.Ordinal);
+        string hashEsperado = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(resultado.Valor.Contenido)))
+            .ToLowerInvariant();
+        Assert.Equal(hashEsperado, resultado.Valor.Hash);
+    }
+
+    [Fact]
+    public void ProcesarContenidoRemoto_EliminaBloqueCompletoDeClavePrivada()
+    {
+        const string contenido = """
+            hostname laboratorio
+            -----BEGIN RSA PRIVATE KEY-----
+            material-privado-linea-1
+            material-privado-linea-2
+            -----END RSA PRIVATE KEY-----
+            interface GigabitEthernet0/1
+            """;
+
+        var resultado = procesador.ProcesarContenidoRemoto(contenido);
+
+        Assert.True(resultado.Exitoso);
+        Assert.DoesNotContain("material-privado", resultado.Valor!.Contenido);
+        Assert.Contains("bloque de clave privada omitido", resultado.Valor.Contenido);
+        Assert.Contains("interface GigabitEthernet0/1", resultado.Valor.Contenido);
+    }
+
+    [Theory]
+    [InlineData("Line has invalid autocommand \"show running-config view full\"")]
+    [InlineData("% Invalid input detected at '^' marker.")]
+    [InlineData("% Authorization failed.")]
+    public void ProcesarContenidoRemoto_RechazaErroresCliComoConfiguracion(string respuesta)
+    {
+        var resultado = procesador.ProcesarContenidoRemoto(respuesta);
+
         Assert.False(resultado.Exitoso);
-        Assert.Contains("no será almacenada", resultado.Error!.Mensaje);
+        Assert.Contains("devolvió un error", resultado.Error!.Mensaje);
     }
 }

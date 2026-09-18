@@ -25,3 +25,5 @@ La captura remota requiere resolver primero el almacenamiento cifrado de credenc
 La carga de archivos y el historial pueden probarse de extremo a extremo sin introducir credenciales de equipos. El contenido equivalente conserva una representación estable entre Windows y Linux, y una nueva versión siempre mantiene disponible la anterior.
 
 El reconocimiento de datos sensibles es una defensa adicional y no garantiza detectar todos los formatos posibles. El operador continúa siendo responsable de anonimizar y revisar el archivo antes de cargarlo. La captura remota queda incompleta hasta que los controles criptográficos previos estén disponibles.
+
+Los controles criptográficos y el adaptador SSH se incorporaron posteriormente. La [ADR 0011](0011-enmascaramiento-automatico-contenido-remoto.md) diferencia el rechazo de archivos manuales del saneamiento automático aplicado a una respuesta remota.

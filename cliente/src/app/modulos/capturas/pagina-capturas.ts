@@ -16,6 +16,8 @@ import { ServicioDispositivos } from '../dispositivos/servicio-dispositivos';
 import { obtenerMensajeError } from '../../nucleo/http/modelo-error-api';
 import {
   CapturaResumen,
+  CapturaRemotaResultado,
+  CargaArchivoResultado,
   VersionConfiguracionDetalle,
   VersionConfiguracionResumen,
 } from './modelos-capturas';
@@ -45,6 +47,7 @@ export class PaginaCapturas implements OnInit {
   protected readonly cargando = signal(true);
   protected readonly cargandoDetalle = signal(false);
   protected readonly guardando = signal(false);
+  protected readonly capturandoRemotamente = signal(false);
   protected readonly vista = signal<VistaEvidencia>('versiones');
   protected readonly filtroDispositivo = signal(0);
   protected readonly mensajeError = signal<string | null>(null);
@@ -54,9 +57,22 @@ export class PaginaCapturas implements OnInit {
     this.dispositivos().filter((dispositivo) => dispositivo.estado === 'Autorizado'),
   );
 
+  protected readonly dispositivosCapturables = computed(() =>
+    this.dispositivos().filter(
+      (dispositivo) =>
+        dispositivo.estado === 'Autorizado' &&
+        dispositivo.protocolo === 'Ssh' &&
+        dispositivo.accesoRemotoConfigurado,
+    ),
+  );
+
   protected readonly formulario = this.constructorFormulario.nonNullable.group({
     dispositivoId: [0, [Validators.required, Validators.min(1)]],
     comentario: ['', [Validators.maxLength(300)]],
+  });
+
+  protected readonly formularioRemoto = this.constructorFormulario.nonNullable.group({
+    dispositivoId: [0, [Validators.required, Validators.min(1)]],
   });
 
   ngOnInit(): void {
@@ -108,8 +124,7 @@ export class PaginaCapturas implements OnInit {
       .pipe(finalize(() => this.guardando.set(false)))
       .subscribe({
         next: (resultado) => {
-          this.capturas.update((capturas) => [resultado.captura, ...capturas]);
-          this.versiones.update((versiones) => [resultado.version, ...versiones]);
+          this.registrarResultado(resultado);
           this.formulario.controls.comentario.reset('');
           this.archivoSeleccionado.set(null);
           this.limpiarSelectorArchivo();
@@ -121,6 +136,35 @@ export class PaginaCapturas implements OnInit {
         error: (error: unknown) =>
           this.mensajeError.set(
             obtenerMensajeError(error, 'No fue posible registrar el archivo de configuración.'),
+          ),
+      });
+  }
+
+  protected capturarRemotamente(): void {
+    this.mensajeError.set(null);
+    this.mensajeExito.set(null);
+    if (this.formularioRemoto.invalid) {
+      this.formularioRemoto.markAllAsTouched();
+      this.mensajeError.set('Selecciona un dispositivo SSH con acceso remoto configurado.');
+      return;
+    }
+
+    const dispositivoId = this.formularioRemoto.controls.dispositivoId.value;
+    this.capturandoRemotamente.set(true);
+    this.servicioCapturas
+      .capturarRemotamente(dispositivoId)
+      .pipe(finalize(() => this.capturandoRemotamente.set(false)))
+      .subscribe({
+        next: (resultado) => {
+          this.registrarResultado(resultado);
+          this.mensajeExito.set(
+            `La captura SSH creó la versión ${resultado.version.numero} con su huella de integridad.`,
+          );
+          this.vista.set('versiones');
+        },
+        error: (error: unknown) =>
+          this.mensajeError.set(
+            obtenerMensajeError(error, 'No fue posible capturar la configuración mediante SSH.'),
           ),
       });
   }
@@ -188,6 +232,15 @@ export class PaginaCapturas implements OnInit {
           if (primerAutorizado && !this.formulario.controls.dispositivoId.value) {
             this.formulario.controls.dispositivoId.setValue(primerAutorizado.id);
           }
+          const primerCapturable = dispositivos.find(
+            (dispositivo) =>
+              dispositivo.estado === 'Autorizado' &&
+              dispositivo.protocolo === 'Ssh' &&
+              dispositivo.accesoRemotoConfigurado,
+          );
+          if (primerCapturable && !this.formularioRemoto.controls.dispositivoId.value) {
+            this.formularioRemoto.controls.dispositivoId.setValue(primerCapturable.id);
+          }
         },
         error: (error: unknown) =>
           this.mensajeError.set(
@@ -221,5 +274,10 @@ export class PaginaCapturas implements OnInit {
     if (this.selectorArchivo) {
       this.selectorArchivo.nativeElement.value = '';
     }
+  }
+
+  private registrarResultado(resultado: CargaArchivoResultado | CapturaRemotaResultado): void {
+    this.capturas.update((capturas) => [resultado.captura, ...capturas]);
+    this.versiones.update((versiones) => [resultado.version, ...versiones]);
   }
 }

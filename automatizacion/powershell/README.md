@@ -18,3 +18,4 @@ Los archivos se guardan como UTF-8 con BOM porque Windows PowerShell 5.1 necesit
 | `Aplicar-MigracionAccesoRemotoSeguro.ps1`  | Aplicar exclusivamente la migración incremental revisada y comprobar columnas, restricción y privilegios.       |
 | `Inicializar-Administrador.ps1`            | Crear localmente los roles funcionales y la primera cuenta administrativa, sin contraseña predeterminada.        |
 | `Rotar-CredencialesDesarrollo.ps1`         | Rotar las credenciales de PostgreSQL y verificar ambas identidades antes de retirar respaldos.                   |
+| `Obtener-HuellaHostSsh.ps1`                | Consultar las claves públicas SSH y calcular candidatos SHA-256 hexadecimales para verificación independiente.   |

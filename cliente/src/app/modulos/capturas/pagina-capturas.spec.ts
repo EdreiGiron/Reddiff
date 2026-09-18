@@ -73,6 +73,22 @@ describe('PaginaCapturas', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Completada');
   });
 
+  it('debe registrar una captura SSH desde un dispositivo preparado', () => {
+    configurarPrueba();
+    const fixture = TestBed.createComponent(PaginaCapturas);
+    fixture.detectChanges();
+    const boton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="capturar-remotamente"]',
+    )!;
+
+    boton.click();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('La captura SSH creó la versión 3');
+    expect(texto).toContain('v3');
+  });
+
   function configurarPrueba(): void {
     TestBed.configureTestingModule({
       imports: [PaginaCapturas],
@@ -116,6 +132,22 @@ describe('PaginaCapturas', () => {
             listarCapturas: () => of([captura]),
             listarVersiones: () => of([version]),
             obtenerVersion: () => of({ ...version, contenido: 'hostname nucleo' }),
+            capturarRemotamente: () =>
+              of({
+                captura: {
+                  ...captura,
+                  id: 5,
+                  medio: 'Ssh',
+                  versionId: 9,
+                },
+                version: {
+                  ...version,
+                  id: 9,
+                  capturaId: 5,
+                  numero: 3,
+                  origen: 'CapturaSsh',
+                },
+              }),
           },
         },
       ],

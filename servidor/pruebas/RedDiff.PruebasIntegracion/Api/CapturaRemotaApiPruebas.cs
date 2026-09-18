@@ -86,7 +86,7 @@ public sealed class CapturaRemotaApiPruebas(FabricaApiPruebas fabrica)
     }
 
     [Fact]
-    public async Task CapturaRemota_NoAlmacenaContenidoConCredencialVisible()
+    public async Task CapturaRemota_EnmascaraContenidoSensibleAntesDeAlmacenarlo()
     {
         long dispositivoId = await CrearDispositivoAsync(
             ProtocoloConexion.Ssh,
@@ -97,10 +97,20 @@ public sealed class CapturaRemotaApiPruebas(FabricaApiPruebas fabrica)
         using HttpResponseMessage respuesta = await CapturarAsync(tecnico, dispositivoId);
         string contenido = await respuesta.Content.ReadAsStringAsync();
 
-        Assert.Equal(HttpStatusCode.BadRequest, respuesta.StatusCode);
-        Assert.Contains("no será almacenada", contenido);
+        Assert.Equal(HttpStatusCode.Created, respuesta.StatusCode);
         Assert.DoesNotContain("clave-no-almacenable", contenido);
-        ComprobarCapturaFallidaSinVersion(dispositivoId);
+
+        using IServiceScope alcance = fabrica.Services.CreateScope();
+        ContextoRedDiff contexto = alcance.ServiceProvider.GetRequiredService<ContextoRedDiff>();
+        var version = Assert.Single(
+            contexto.VersionesConfiguracion,
+            elemento => elemento.DispositivoId == dispositivoId);
+        Assert.DoesNotContain("clave-no-almacenable", version.Contenido);
+        Assert.Contains("[PROTEGIDO", version.Contenido);
+        Assert.Contains(
+            contexto.Capturas,
+            captura => captura.DispositivoId == dispositivoId
+                && captura.Estado == EstadoCaptura.Completada);
     }
 
     [Fact]

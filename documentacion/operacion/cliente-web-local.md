@@ -2,7 +2,7 @@
 
 ## Alcance
 
-El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente, consultar el inventario, cargar configuraciones enmascaradas y revisar el historial. El rol `Administrador` también puede gestionar usuarios, dispositivos y su acceso remoto protegido. El rol `Tecnico` puede operar capturas y consultar los equipos, pero no modificar el inventario, administrar credenciales ni abrir la administración de usuarios.
+El cliente permite iniciar y cerrar sesión, restaurar una sesión vigente, consultar el inventario, cargar configuraciones enmascaradas, solicitar capturas SSH y revisar el historial. El rol `Administrador` también puede gestionar usuarios, dispositivos y su acceso remoto protegido. El rol `Tecnico` puede operar capturas y consultar los equipos, pero no modificar el inventario, administrar credenciales ni abrir la administración de usuarios.
 
 ## Requisitos previos
 
@@ -53,6 +53,8 @@ El servidor de desarrollo de Angular utiliza `proxy.conf.json` para reenviar `/a
 18. Escriba `http://localhost:4200/usuarios` y confirme que el sistema lo devuelva al inicio.
 19. Cierre la sesión técnica, ingrese nuevamente como administrador y desactive la cuenta de prueba.
 
+La prueba de una conexión SSH real se realiza aparte y únicamente contra GNS3 o un equipo autorizado. Siga [captura SSH en laboratorio](captura-ssh-laboratorio.md) para obtener y verificar la huella, preparar una cuenta de consulta y solicitar la captura desde la nueva tarjeta **Captura SSH**.
+
 No escriba contraseñas en comandos, archivos de configuración, capturas de pantalla, documentación o mensajes. Sustituya todo dato sensible del archivo por `[PROTEGIDO]` antes de cargarlo. El navegador no debe conservar las credenciales de acceso después de enviar el formulario.
 
 ## Validación automatizada
@@ -65,7 +67,7 @@ npm test -- --watch=false
 npx prettier --check src angular.json proxy.conf.json README.md
 ```
 
-Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso, la restricción que impide desactivar la propia cuenta y la presentación del inventario y del historial según el rol. También verifican que el formulario no reciba el secreto persistido y limpie el secreto nuevo después de enviarlo.
+Las pruebas comprueban el envío de cookies, la inclusión de CSRF en operaciones de escritura, la restauración de sesión, los guardianes de rutas, las validaciones del acceso, la restricción que impide desactivar la propia cuenta y la presentación del inventario y del historial según el rol. También verifican que el formulario no reciba el secreto persistido, limpie el secreto nuevo después de enviarlo y registre el resultado de una captura SSH sin reemplazar versiones anteriores.
 
 ## Solución de problemas
 

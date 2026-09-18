@@ -80,23 +80,74 @@
       }
     </section>
 
-    <section class="panel panel--resumen" aria-label="Resumen de evidencia">
-      <p class="sobrelinea">Estado actual</p>
-      <div class="metricas">
-        <div>
-          <strong>{{ versiones().length }}</strong>
-          <span>Versiones visibles</span>
+    <div class="columna-secundaria">
+      <section class="panel panel--remota" aria-labelledby="titulo-remota">
+        <div class="panel__encabezado">
+          <div>
+            <p class="sobrelinea">Consulta al equipo</p>
+            <h2 id="titulo-remota">Captura SSH</h2>
+          </div>
+          <span class="icono-remoto" aria-hidden="true">SSH</span>
         </div>
-        <div>
-          <strong>{{ capturas().length }}</strong>
-          <span>Capturas visibles</span>
+
+        @if (dispositivosCapturables().length) {
+          <form [formGroup]="formularioRemoto" (ngSubmit)="capturarRemotamente()" novalidate>
+            <label class="campo">
+              <span>Dispositivo preparado</span>
+              <select formControlName="dispositivoId">
+                @for (dispositivo of dispositivosCapturables(); track dispositivo.id) {
+                  <option [ngValue]="dispositivo.id">
+                    {{ dispositivo.nombre }} · {{ dispositivo.host }}:{{ dispositivo.puerto }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <div class="nota-seguridad" role="note">
+              <strong>Operación de solo lectura</strong>
+              <p>
+                RedDiff verificará la huella aprobada, desactivará la paginación solo durante la
+                sesión y ejecutará <code>show running-config view full</code>. No enviará cambios a
+                la configuración y omitirá los datos sensibles reconocidos antes de almacenar la
+                versión.
+              </p>
+            </div>
+
+            <button
+              class="boton boton--primario"
+              data-testid="capturar-remotamente"
+              type="submit"
+              [disabled]="capturandoRemotamente()"
+            >
+              {{ capturandoRemotamente() ? 'Consultando…' : 'Capturar configuración' }}
+            </button>
+          </form>
+        } @else if (!cargando()) {
+          <div class="estado-vacio estado-vacio--remoto">
+            <strong>No hay equipos SSH preparados</strong>
+            <p>Autoriza un dispositivo y configura su acceso remoto para habilitar esta acción.</p>
+          </div>
+        }
+      </section>
+
+      <section class="panel panel--resumen" aria-label="Resumen de evidencia">
+        <p class="sobrelinea">Estado actual</p>
+        <div class="metricas">
+          <div>
+            <strong>{{ versiones().length }}</strong>
+            <span>Versiones visibles</span>
+          </div>
+          <div>
+            <strong>{{ capturas().length }}</strong>
+            <span>Capturas visibles</span>
+          </div>
         </div>
-      </div>
-      <p class="explicacion">
-        Cada carga crea una captura completada, una versión consecutiva y una huella SHA-256. El
-        archivo anterior permanece disponible como evidencia.
-      </p>
-    </section>
+        <p class="explicacion">
+          Cada operación válida crea una captura, una versión consecutiva y una huella SHA-256. La
+          evidencia anterior permanece disponible.
+        </p>
+      </section>
+    </div>
   </div>
 
   <section class="evidencia" aria-labelledby="titulo-evidencia">

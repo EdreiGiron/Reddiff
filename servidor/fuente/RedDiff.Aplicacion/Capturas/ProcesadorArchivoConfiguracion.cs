@@ -11,6 +11,9 @@ public sealed partial class ProcesadorArchivoConfiguracion
 
     private const int LongitudMaximaNombre = 160;
     private const int LongitudMaximaComentarioUsuario = 300;
+    private const string MarcaDatoProtegido = "! [PROTEGIDO: dato sensible omitido]";
+    private const string MarcaClavePrivadaProtegida =
+        "! [PROTEGIDO: bloque de clave privada omitido]";
 
     private static readonly HashSet<string> ExtensionesPermitidas = new(
         [".txt", ".cfg", ".conf", ".config"],
@@ -143,18 +146,25 @@ public sealed partial class ProcesadorArchivoConfiguracion
                 "La respuesta remota contiene caracteres de control no permitidos.");
         }
 
-        if (ContieneCredencialSinEnmascarar(contenidoNormalizado))
+        if (ContieneErrorCliRemoto(contenidoNormalizado))
         {
             return FallarContenidoRemoto(
-                "La configuración obtenida contiene credenciales o comunidades sin enmascarar y no será almacenada.");
+                "El dispositivo devolvió un error en lugar de una configuración válida.");
+        }
+
+        string contenidoSeguro = EnmascararDatosSensiblesRemotos(contenidoNormalizado);
+        if (ContieneCredencialSinEnmascarar(contenidoSeguro))
+        {
+            return FallarContenidoRemoto(
+                "La configuración contiene un dato sensible que no pudo enmascararse de forma segura.");
         }
 
         string hash = Convert.ToHexString(
-            SHA256.HashData(Encoding.UTF8.GetBytes(contenidoNormalizado)))
+            SHA256.HashData(Encoding.UTF8.GetBytes(contenidoSeguro)))
             .ToLowerInvariant();
 
         return ResultadoOperacion<ContenidoConfiguracionProcesado>.Correcto(
-            new ContenidoConfiguracionProcesado(contenidoNormalizado, hash));
+            new ContenidoConfiguracionProcesado(contenidoSeguro, hash));
     }
 
     public static string NormalizarParaIntegridad(string contenido)
@@ -195,6 +205,60 @@ public sealed partial class ProcesadorArchivoConfiguracion
         return false;
     }
 
+    private static bool ContieneErrorCliRemoto(string contenido)
+    {
+        return contenido.Contains("% Invalid input", StringComparison.OrdinalIgnoreCase)
+            || contenido.Contains("% Incomplete command", StringComparison.OrdinalIgnoreCase)
+            || contenido.Contains("% Ambiguous command", StringComparison.OrdinalIgnoreCase)
+            || contenido.Contains("% Authorization failed", StringComparison.OrdinalIgnoreCase)
+            || contenido.Contains("% Unrecognized command", StringComparison.OrdinalIgnoreCase)
+            || contenido.Contains("invalid autocommand", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string EnmascararDatosSensiblesRemotos(string contenido)
+    {
+        List<string> lineasSeguras = [];
+        bool dentroDeClavePrivada = false;
+
+        foreach (string linea in contenido.Split('\n'))
+        {
+            if (dentroDeClavePrivada)
+            {
+                if (PatronFinClavePrivada().IsMatch(linea))
+                {
+                    dentroDeClavePrivada = false;
+                }
+
+                continue;
+            }
+
+            if (PatronInicioClavePrivada().IsMatch(linea))
+            {
+                lineasSeguras.Add(ObtenerSangria(linea) + MarcaClavePrivadaProtegida);
+                dentroDeClavePrivada = true;
+                continue;
+            }
+
+            lineasSeguras.Add(
+                PatronDatoSensible().IsMatch(linea)
+                    ? ObtenerSangria(linea) + MarcaDatoProtegido
+                    : linea);
+        }
+
+        return string.Join('\n', lineasSeguras);
+    }
+
+    private static string ObtenerSangria(string linea)
+    {
+        int longitud = 0;
+        while (longitud < linea.Length && linea[longitud] is ' ' or '\t')
+        {
+            longitud++;
+        }
+
+        return linea[..longitud];
+    }
+
     private static ResultadoOperacion<ArchivoConfiguracionProcesado> Fallar(string mensaje)
     {
         return ResultadoOperacion<ArchivoConfiguracionProcesado>.Fallido(
@@ -211,9 +275,19 @@ public sealed partial class ProcesadorArchivoConfiguracion
     }
 
     [GeneratedRegex(
-        @"^\s*(?:-----BEGIN\s+.*PRIVATE KEY-----|enable\s+(?:password|secret)|username\s+\S+.*\s(?:password|secret)\s+|snmp-server\s+community\s+|(?:radius-server|tacacs-server)\s+key\s+|neighbor\s+\S+\s+password\s+|crypto\s+isakmp\s+key\s+|(?:key-string|pre-shared-key|authentication-key|password)\s+)",
+        @"^\s*(?:-----BEGIN\s+.*PRIVATE KEY-----|enable\s+(?:password|secret)|username\s+\S+.*\s(?:password|secret)\s+|snmp-server\s+community\s+|(?:radius-server|tacacs-server)\s+key\s+|neighbor\s+\S+\s+password\s+|crypto\s+isakmp\s+key\s+|(?:key-string|pre-shared-key|authentication-key|password|secret)\s+)",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex PatronDatoSensible();
+
+    [GeneratedRegex(
+        @"^\s*-----BEGIN\s+.*PRIVATE KEY-----",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PatronInicioClavePrivada();
+
+    [GeneratedRegex(
+        @"^\s*-----END\s+.*PRIVATE KEY-----",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex PatronFinClavePrivada();
 
     [GeneratedRegex(
         @"(?:\[PROTEGIDO\]|<PROTEGIDO>|\*{3,}|REDACTED|ENMASCARADO)",

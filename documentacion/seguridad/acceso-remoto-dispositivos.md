@@ -2,7 +2,7 @@
 
 ## Alcance actual
 
-El modelo, la migración incremental y la administración web preparan las condiciones de seguridad necesarias para capturas mediante SSH o NETCONF. La orquestación de la captura bajo demanda ya se encuentra implementada y validada mediante conectores simulados. El servidor normal todavía no registra adaptadores reales, por lo que no abre conexiones de red en esta etapa.
+El modelo, la migración incremental y la administración web establecen las condiciones de seguridad para capturas mediante SSH o NETCONF. La captura bajo demanda mediante SSH ya utiliza un adaptador real de solo lectura. NETCONF permanece deshabilitado hasta incorporar su adaptador específico.
 
 La captura posterior será exclusivamente de lectura. No se incorporarán operaciones para entrar en modo de configuración, aplicar cambios ni ejecutar comandos arbitrarios.
 
@@ -47,16 +47,21 @@ El formulario requiere una confirmación explícita de que la huella se obtuvo p
 
 ## Orquestación segura
 
-La solicitud remota selecciona el conector por el protocolo configurado, descifra temporalmente el secreto, aplica un límite de 15 segundos y permite cancelar la operación. El contenido recibido atraviesa las mismas reglas de normalización, tamaño e identificación de datos sensibles utilizadas para archivos. Solo después de aprobarlas se crea una versión inmutable con su huella SHA-256.
+La solicitud remota selecciona el conector por el protocolo configurado, descifra temporalmente el secreto, aplica un límite de 15 segundos y permite cancelar la operación. El contenido recibido se normaliza, limita y valida antes de reemplazar líneas sensibles y bloques de claves privadas por marcas seguras. Solo entonces se calcula la huella SHA-256 y se crea una versión inmutable. Los archivos manuales conservan el requisito más estricto de llegar previamente enmascarados.
 
 Los fallos de conexión, autenticación, tiempo, identidad y contenido quedan representados mediante mensajes controlados. Las auditorías no almacenan excepciones de bibliotecas, secretos, configuraciones ni respuestas técnicas completas.
+
+## Adaptador SSH habilitado
+
+El adaptador SSH abre una conexión nueva para cada captura, compara el algoritmo y la huella SHA-256 de la clave pública antes de confiar en el equipo y después autentica al usuario técnico. Para admitir IOS 12.4 utiliza un flujo de terminal controlado que solo envía `terminal length 0` y `show running-config view full`; no recibe comandos del navegador, no ofrece consola, no entra en modo privilegiado y no modifica la configuración. Los errores del CLI se rechazan antes del saneamiento y nunca se aceptan como evidencia. El servidor sanea una respuesta válida antes de incorporarla al historial y no conserva el valor eliminado.
+
+Las pruebas automatizadas reemplazan el adaptador por dobles controlados y nunca contactan la red. Una prueba del adaptador real requiere un laboratorio autorizado y el procedimiento de [captura SSH en laboratorio](../operacion/captura-ssh-laboratorio.md).
 
 ## Límites pendientes
 
 Esta etapa no incluye:
 
-- adaptadores reales de SSH y NETCONF;
-- ejecución de capturas contra equipos reales;
+- adaptador real de NETCONF;
 - recepción de avisos SNMP o Syslog.
 
-Los conectores simulados solo existen en el proyecto de pruebas y no se registran en la aplicación normal. Los adaptadores reales se incorporarán en un bloque posterior con pruebas separadas. Ningún secreto real ni huella de producción debe utilizarse durante las pruebas iniciales.
+Los conectores simulados solo existen en el proyecto de pruebas. El adaptador SSH real se registra en la aplicación normal; NETCONF no intenta abrir la red y devuelve un fallo controlado mientras no exista su implementación. Ningún secreto ni huella de producción debe utilizarse en pruebas: se debe trabajar con GNS3 o con un equipo expresamente autorizado.
