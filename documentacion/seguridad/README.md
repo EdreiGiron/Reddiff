@@ -10,4 +10,6 @@ Las reglas de validación, enmascaramiento y exposición del contenido históric
 
 La comparación opera únicamente sobre versiones ya saneadas, persiste evidencia de solo lectura y audita cantidades sin copiar contenido. Consulte [comparación diferencial](../api/comparaciones.md).
 
+La verificación de cumplimiento opera sobre versiones preservadas, mantiene reglas y resultados como evidencia inmutable y registra en auditoría solo identificadores, cantidades y el resultado general. La creación y el cambio de estado de líneas base están reservados al administrador. Consulte [líneas base y verificaciones](../api/baselines-y-verificaciones.md).
+
 El almacenamiento cifrado de secretos de equipos, la confianza explícita de la clave del host y la invalidación del acceso ante cambios se describen en [acceso remoto a dispositivos](acceso-remoto-dispositivos.md).

@@ -1,0 +1,413 @@
+<section class="pagina" aria-labelledby="titulo-cumplimiento">
+  <header class="encabezado">
+    <div>
+      <p class="sobrelinea">Control técnico documentado</p>
+      <h1 id="titulo-cumplimiento">Línea base y cumplimiento</h1>
+      <p>
+        Contrasta versiones preservadas con criterios mínimos sin modificar la configuración del
+        dispositivo.
+      </p>
+    </div>
+    <span class="insignia">Sin remediación automática</span>
+  </header>
+
+  @if (mensajeExito()) {
+    <div class="alerta alerta--exito" role="status">✓ {{ mensajeExito() }}</div>
+  }
+  @if (mensajeError()) {
+    <div class="alerta alerta--error" role="alert">{{ mensajeError() }}</div>
+  }
+
+  @if (servicioSesion.esAdministrador()) {
+    <section class="panel creador" aria-labelledby="titulo-crear-baseline">
+      <header class="panel__encabezado">
+        <div>
+          <p class="sobrelinea">Administración</p>
+          <h2 id="titulo-crear-baseline">Definir una línea base</h2>
+          <p>Sus reglas quedarán inmutables para conservar la interpretación histórica.</p>
+        </div>
+        <span class="contador-reglas">{{ reglasFormulario.length }} reglas</span>
+      </header>
+
+      <form [formGroup]="formularioBaseline" (ngSubmit)="crearBaseline()" novalidate>
+        <div class="cuadricula-formulario">
+          <label class="campo campo--nombre">
+            <span>Nombre de la línea base</span>
+            <input
+              type="text"
+              formControlName="nombre"
+              maxlength="150"
+              placeholder="Ej. Controles mínimos del router principal"
+            />
+          </label>
+
+          <label class="campo">
+            <span>Alcance</span>
+            <select formControlName="alcance" (change)="cambiarAlcanceCreacion()">
+              <option value="Dispositivo">Dispositivo específico</option>
+              <option value="TipoDispositivo">Tipo de dispositivo</option>
+            </select>
+          </label>
+
+          @if (formularioBaseline.controls.alcance.value === 'Dispositivo') {
+            <label class="campo">
+              <span>Dispositivo</span>
+              <select formControlName="dispositivoId" (change)="cambiarObjetivoCreacion()">
+                @for (dispositivo of dispositivos(); track dispositivo.id) {
+                  <option [ngValue]="dispositivo.id">{{ dispositivo.nombre }}</option>
+                }
+              </select>
+            </label>
+          } @else {
+            <label class="campo">
+              <span>Tipo de dispositivo</span>
+              <select formControlName="tipoDispositivo" (change)="cambiarObjetivoCreacion()">
+                @for (tipo of tiposDispositivo(); track tipo) {
+                  <option [value]="tipo">{{ tipo }}</option>
+                }
+              </select>
+            </label>
+          }
+
+          <label class="campo campo--referencia">
+            <span>Versión histórica de referencia <small>(opcional)</small></span>
+            <select formControlName="versionReferenciaId">
+              <option [ngValue]="0">Sin versión de referencia</option>
+              @for (version of versionesReferenciaDisponibles(); track version.id) {
+                <option [ngValue]="version.id">
+                  {{ version.dispositivo }} · v{{ version.numero }} ·
+                  {{ version.capturadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                </option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <div class="reglas" formArrayName="reglas">
+          <div class="reglas__encabezado">
+            <div>
+              <h3>Criterios mínimos</h3>
+              <p>La evaluación distingue mayúsculas, espacios y contenido exacto.</p>
+            </div>
+            <button class="boton boton--secundario" type="button" (click)="agregarRegla()">
+              + Agregar regla
+            </button>
+          </div>
+
+          @for (regla of reglasFormulario.controls; track regla; let indice = $index) {
+            <div class="regla" [formGroupName]="indice">
+              <span class="regla__numero">{{ indice + 1 }}</span>
+              <label class="campo">
+                <span>Criterio</span>
+                <select formControlName="criterio">
+                  <option value="Contiene">Debe contener</option>
+                  <option value="NoContiene">No debe contener</option>
+                  <option value="CoincideExpresionRegular">Expresión regular</option>
+                </select>
+              </label>
+              <label class="campo regla__esperado">
+                <span>Contenido esperado</span>
+                <textarea
+                  formControlName="esperado"
+                  rows="2"
+                  maxlength="10000"
+                  placeholder="Comando, fragmento o expresión que se evaluará"
+                ></textarea>
+              </label>
+              <label class="opcion-obligatoria">
+                <input type="checkbox" formControlName="obligatoria" />
+                <span>Obligatoria</span>
+              </label>
+              <button
+                class="boton-quitar"
+                type="button"
+                (click)="quitarRegla(indice)"
+                [disabled]="reglasFormulario.length === 1"
+                [attr.aria-label]="'Eliminar regla ' + (indice + 1)"
+              >
+                ×
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="pie-formulario">
+          <p>
+            Una regla opcional genera evidencia, pero solo las obligatorias determinan el resultado
+            general.
+          </p>
+          <button
+            class="boton boton--primario"
+            data-testid="crear-baseline"
+            type="submit"
+            [disabled]="guardandoBaseline()"
+          >
+            {{ guardandoBaseline() ? 'Guardando…' : 'Crear línea base' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <section class="panel catalogo" aria-labelledby="titulo-baselines">
+    <header class="panel__encabezado">
+      <div>
+        <p class="sobrelinea">Referencias controladas</p>
+        <h2 id="titulo-baselines">Líneas base disponibles</h2>
+      </div>
+      <span>{{ baselines().length }} registradas</span>
+    </header>
+
+    @if (cargando()) {
+      <div class="estado-vacio" role="status"><span class="cargador"></span>Cargando…</div>
+    } @else if (baselines().length) {
+      <div class="tarjetas-baseline">
+        @for (baseline of baselines(); track baseline.id) {
+          <article class="tarjeta-baseline" [class.tarjeta-baseline--inactiva]="!baseline.activa">
+            <div class="tarjeta-baseline__superior">
+              <span class="estado-baseline" [attr.data-activa]="baseline.activa">
+                {{ baseline.activa ? 'Activa' : 'Inactiva' }}
+              </span>
+              <span>#{{ baseline.id }}</span>
+            </div>
+            <h3>{{ baseline.nombre }}</h3>
+            <p>{{ descripcionAlcance(baseline) }}</p>
+            <dl>
+              <div>
+                <dt>Reglas</dt>
+                <dd>{{ baseline.reglas.length }}</dd>
+              </div>
+              <div>
+                <dt>Referencia</dt>
+                <dd>
+                  @if (baseline.versionReferencia; as referencia) {
+                    {{ referencia.dispositivo }} · v{{ referencia.numero }}
+                  } @else {
+                    No definida
+                  }
+                </dd>
+              </div>
+            </dl>
+            @if (servicioSesion.esAdministrador()) {
+              <button
+                class="enlace"
+                type="button"
+                (click)="cambiarEstado(baseline)"
+                [disabled]="cambiandoEstadoId() === baseline.id"
+              >
+                {{ baseline.activa ? 'Desactivar' : 'Activar' }}
+              </button>
+            }
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="estado-vacio">
+        <strong>No hay líneas base registradas</strong>
+        <p>Un administrador debe definir los criterios antes de ejecutar verificaciones.</p>
+      </div>
+    }
+  </section>
+
+  <section class="panel verificador" aria-labelledby="titulo-verificar">
+    <header class="panel__encabezado">
+      <div>
+        <p class="sobrelinea">Evaluación bajo demanda</p>
+        <h2 id="titulo-verificar">Verificar una versión preservada</h2>
+      </div>
+      <span class="insignia insignia--clara">Solo diagnóstico</span>
+    </header>
+
+    @if (baselinesActivas().length) {
+      <form [formGroup]="formularioVerificacion" (ngSubmit)="ejecutarVerificacion()">
+        <label class="campo">
+          <span>Línea base activa</span>
+          <select formControlName="baselineId" (change)="cambiarBaseline()">
+            @for (baseline of baselinesActivas(); track baseline.id) {
+              <option [ngValue]="baseline.id">
+                {{ baseline.nombre }} · {{ descripcionAlcance(baseline) }}
+              </option>
+            }
+          </select>
+        </label>
+        <label class="campo">
+          <span>Versión compatible</span>
+          <select formControlName="versionId">
+            @for (version of versionesCompatibles(); track version.id) {
+              <option [ngValue]="version.id">
+                {{ version.dispositivo }} · v{{ version.numero }} ·
+                {{ version.capturadaEn | date: 'dd/MM/yyyy HH:mm' }}
+              </option>
+            }
+          </select>
+        </label>
+        <button
+          class="boton boton--primario"
+          data-testid="verificar-version"
+          type="submit"
+          [disabled]="verificando() || !versionesCompatibles().length"
+        >
+          {{ verificando() ? 'Verificando…' : 'Verificar cumplimiento' }}
+        </button>
+      </form>
+      @if (baselineSeleccionada(); as baseline) {
+        <div class="resumen-seleccion">
+          <strong>{{ baseline.reglas.length }} criterios configurados</strong>
+          <span>{{ contarObligatorias(baseline) }} obligatorios</span>
+          <span>{{ versionesCompatibles().length }} versiones compatibles</span>
+        </div>
+      }
+    } @else if (!cargando()) {
+      <div class="estado-vacio">
+        <strong>No existe una línea base activa</strong>
+        <p>Activa o registra una referencia para habilitar la evaluación.</p>
+      </div>
+    }
+  </section>
+
+  @if (resultado(); as verificacion) {
+    <section class="resultado" aria-labelledby="titulo-resultado">
+      <header class="resultado__encabezado">
+        <div>
+          <p class="sobrelinea">
+            {{ verificacion.dispositivo }} · versión {{ verificacion.version }}
+          </p>
+          <h2 id="titulo-resultado">{{ verificacion.baseline }}</h2>
+          <small>
+            Verificada el {{ verificacion.fecha | date: 'dd/MM/yyyy HH:mm:ss' }} por
+            {{ verificacion.usuario }}
+          </small>
+        </div>
+        <div class="resultado__acciones">
+          <span class="resultado-general" [attr.data-resultado]="verificacion.resultadoGeneral">
+            {{ etiquetaResultado(verificacion.resultadoGeneral) }}
+          </span>
+          <button
+            class="boton-cerrar"
+            type="button"
+            (click)="cerrarResultado()"
+            aria-label="Cerrar resultado"
+          >
+            ×
+          </button>
+        </div>
+      </header>
+
+      <div class="metricas">
+        <div>
+          <strong>{{ verificacion.porcentajeCumplimiento | number: '1.0-2' }}%</strong
+          ><span>Cumplimiento</span>
+        </div>
+        <div class="metrica--cumplida">
+          <strong>{{ verificacion.cumplidas }}</strong
+          ><span>Cumplidas</span>
+        </div>
+        <div class="metrica--incumplida">
+          <strong>{{ verificacion.incumplidas }}</strong
+          ><span>Incumplidas</span>
+        </div>
+        <div class="metrica--no-evaluable">
+          <strong>{{ verificacion.noEvaluables }}</strong
+          ><span>No evaluables</span>
+        </div>
+      </div>
+
+      <div class="tabla-desplazable">
+        <table class="tabla-resultados">
+          <thead>
+            <tr>
+              <th>Regla</th>
+              <th>Criterio</th>
+              <th>Contenido esperado</th>
+              <th>Resultado</th>
+              <th>Evidencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (regla of verificacion.resultados; track regla.reglaId) {
+              <tr [attr.data-estado]="regla.estado">
+                <td data-label="Regla">
+                  <strong>#{{ regla.reglaId }}</strong>
+                  <small>{{ regla.obligatoria ? 'Obligatoria' : 'Opcional' }}</small>
+                </td>
+                <td data-label="Criterio">{{ etiquetaCriterio(regla.criterio) }}</td>
+                <td data-label="Contenido esperado">
+                  <code>{{ regla.esperado }}</code>
+                </td>
+                <td data-label="Resultado">
+                  <span class="estado-regla">{{ regla.estado }}</span>
+                </td>
+                <td data-label="Evidencia">{{ regla.evidencia }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <section class="panel historial" aria-labelledby="titulo-historial">
+    <header class="panel__encabezado">
+      <div>
+        <p class="sobrelinea">Evidencia conservada</p>
+        <h2 id="titulo-historial">Verificaciones recientes</h2>
+      </div>
+      <span>{{ historialVisible().length }} registros</span>
+    </header>
+
+    @if (!cargando() && historialVisible().length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th>Verificación</th>
+              <th>Dispositivo y versión</th>
+              <th>Fecha y usuario</th>
+              <th>Resultado</th>
+              <th>Cumplimiento</th>
+              <th><span class="solo-lectura">Acción</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (verificacion of historialVisible(); track verificacion.id) {
+              <tr>
+                <td data-label="Verificación">
+                  <strong>#{{ verificacion.id }}</strong>
+                </td>
+                <td data-label="Dispositivo y versión">
+                  <strong>{{ verificacion.dispositivo }}</strong
+                  ><small>v{{ verificacion.version }}</small>
+                </td>
+                <td data-label="Fecha y usuario">
+                  <strong>{{ verificacion.fecha | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                  <small>{{ verificacion.usuario }}</small>
+                </td>
+                <td data-label="Resultado">
+                  <span
+                    class="resultado-general"
+                    [attr.data-resultado]="verificacion.resultadoGeneral"
+                  >
+                    {{ etiquetaResultado(verificacion.resultadoGeneral) }}
+                  </span>
+                </td>
+                <td data-label="Cumplimiento">
+                  {{ verificacion.porcentajeCumplimiento | number: '1.0-2' }}%
+                </td>
+                <td>
+                  <button class="enlace" type="button" (click)="abrirVerificacion(verificacion.id)">
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!cargando()) {
+      <div class="estado-vacio estado-vacio--historial">
+        <strong>No hay verificaciones registradas para esta línea base</strong>
+        <p>La primera evaluación válida quedará disponible en este historial.</p>
+      </div>
+    }
+  </section>
+</section>

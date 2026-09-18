@@ -12,4 +12,6 @@ La carga controlada de archivos, la captura SSH de solo lectura, las capturas y 
 
 La creación y consulta de diferencias persistidas entre versiones del mismo dispositivo se describe en [comparación diferencial](comparaciones.md).
 
+La administración de líneas base y la verificación persistida de versiones se describen en [líneas base y verificaciones](baselines-y-verificaciones.md).
+
 El cliente consume rutas relativas bajo `/api`. Durante el desarrollo, Angular las dirige a `http://localhost:5088` mediante `cliente/proxy.conf.json`; esta configuración no forma parte de la compilación de producción.

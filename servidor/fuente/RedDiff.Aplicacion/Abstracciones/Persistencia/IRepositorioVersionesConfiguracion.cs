@@ -9,6 +9,10 @@ public interface IRepositorioVersionesConfiguracion
         long versionId,
         CancellationToken cancellationToken = default);
 
+    Task<VersionConfiguracion?> ObtenerPorIdConSeguimientoAsync(
+        long versionId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<VersionConfiguracion>> ListarAsync(
         long? dispositivoId,
         OrigenVersion? origen,

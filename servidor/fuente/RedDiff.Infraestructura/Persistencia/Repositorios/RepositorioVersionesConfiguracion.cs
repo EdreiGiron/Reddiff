@@ -12,12 +12,25 @@ internal sealed class RepositorioVersionesConfiguracion(ContextoRedDiff contexto
         long versionId,
         CancellationToken cancellationToken = default)
     {
-        return contexto.VersionesConfiguracion
+        return ConsultaCompleta()
             .AsNoTracking()
+            .SingleOrDefaultAsync(version => version.Id == versionId, cancellationToken);
+    }
+
+    public Task<VersionConfiguracion?> ObtenerPorIdConSeguimientoAsync(
+        long versionId,
+        CancellationToken cancellationToken = default)
+    {
+        return ConsultaCompleta()
+            .SingleOrDefaultAsync(version => version.Id == versionId, cancellationToken);
+    }
+
+    private IQueryable<VersionConfiguracion> ConsultaCompleta()
+    {
+        return contexto.VersionesConfiguracion
             .Include(version => version.Dispositivo)
             .Include(version => version.Captura)
-                .ThenInclude(captura => captura.UsuarioSolicitante)
-            .SingleOrDefaultAsync(version => version.Id == versionId, cancellationToken);
+                .ThenInclude(captura => captura.UsuarioSolicitante);
     }
 
     public async Task<IReadOnlyList<VersionConfiguracion>> ListarAsync(

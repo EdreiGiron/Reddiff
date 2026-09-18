@@ -50,6 +50,14 @@ export const rutasAplicacion: Routes = [
         title: 'RedDiff | Comparación diferencial',
       },
       {
+        path: 'cumplimiento',
+        loadComponent: () =>
+          import('./modulos/cumplimiento/pagina-cumplimiento').then(
+            (modulo) => modulo.PaginaCumplimiento,
+          ),
+        title: 'RedDiff | Línea base y cumplimiento',
+      },
+      {
         path: 'usuarios',
         canActivate: [guardianAdministrador],
         loadComponent: () =>

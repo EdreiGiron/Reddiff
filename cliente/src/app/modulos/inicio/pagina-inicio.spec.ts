@@ -35,5 +35,6 @@ describe('PaginaInicio', () => {
     expect(elemento.textContent).toContain('Usuarios y roles');
     expect(elemento.textContent).toContain('Dispositivos');
     expect(elemento.textContent).toContain('Comparación diferencial');
+    expect(elemento.textContent).toContain('Línea base y cumplimiento');
   });
 });
