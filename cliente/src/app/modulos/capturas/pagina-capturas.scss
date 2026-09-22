@@ -220,7 +220,7 @@ code {
 }
 .metricas {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
   margin: 0.6rem 0 1rem;
 }
@@ -341,12 +341,18 @@ td code {
   font-weight: 800;
 }
 .estado[data-estado='Fallida'],
-.estado[data-estado='Cancelada'] {
+.estado[data-estado='Cancelada'],
+.estado[data-estado='Rechazado'] {
   color: #8b3030;
   background: #fff0f0;
 }
 .estado[data-estado='Pendiente'],
-.estado[data-estado='EnProceso'] {
+.estado[data-estado='EnProceso'],
+.estado[data-estado='Recibido'],
+.estado[data-estado='Validado'],
+.estado[data-estado='Encolado'],
+.estado[data-estado='Duplicado'],
+.estado[data-estado='SinCambios'] {
   color: #8a5a18;
   background: #fff3d8;
 }

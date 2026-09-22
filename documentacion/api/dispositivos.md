@@ -9,7 +9,7 @@ Los canales de obtención de configuración admitidos son:
 - `Ssh`, normalmente en el puerto 22;
 - `Netconf`, normalmente en el puerto 830.
 
-Las fuentes opcionales de avisos son `SnmpTrap`, `SnmpInform` y `Syslog`. Un aviso futuro podrá iniciar una captura, pero no se considera una configuración completa. La carga controlada de archivos pertenece al módulo de capturas y no es un protocolo de conexión del inventario.
+Las fuentes opcionales de avisos son `SnmpTrap`, `SnmpInform` y `Syslog`. La recepción `Syslog` puede iniciar una captura deduplicada cuando se habilita explícitamente; el aviso no se considera una configuración completa. SNMP permanece reservado para una ampliación posterior. La carga controlada de archivos pertenece al módulo de capturas y no es un protocolo de conexión del inventario.
 
 ## Permisos
 

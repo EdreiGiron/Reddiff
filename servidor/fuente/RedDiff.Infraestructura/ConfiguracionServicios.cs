@@ -11,6 +11,7 @@ using RedDiff.Infraestructura.Persistencia;
 using RedDiff.Infraestructura.Persistencia.Repositorios;
 using RedDiff.Infraestructura.Red.Netconf;
 using RedDiff.Infraestructura.Red.Ssh;
+using RedDiff.Infraestructura.Red.Syslog;
 using RedDiff.Infraestructura.Seguridad;
 
 namespace RedDiff.Infraestructura;
@@ -89,6 +90,7 @@ public static class ConfiguracionServicios
         servicios.AddScoped<IRepositorioCapturas, RepositorioCapturas>();
         servicios.AddScoped<IRepositorioComparaciones, RepositorioComparaciones>();
         servicios.AddScoped<IRepositorioDispositivos, RepositorioDispositivos>();
+        servicios.AddScoped<IRepositorioEventosCambio, RepositorioEventosCambio>();
         servicios.AddScoped<IRepositorioVerificaciones, RepositorioVerificaciones>();
         servicios.AddScoped<IRepositorioVersionesConfiguracion, RepositorioVersionesConfiguracion>();
         servicios.AddScoped<IRepositorioUsuarios, RepositorioUsuarios>();
@@ -100,6 +102,18 @@ public static class ConfiguracionServicios
             ProtectorSecretoDispositivoDataProtection>();
         servicios.AddSingleton<IConectorCapturaRemota, ConectorCapturaSsh>();
         servicios.AddSingleton<IConectorCapturaRemota, ConectorCapturaNetconf>();
+
+        servicios
+            .AddOptions<OpcionesReceptorSyslog>()
+            .Bind(configuracion.GetSection(OpcionesReceptorSyslog.NombreSeccion))
+            .Validate(
+                opciones => System.Net.IPAddress.TryParse(opciones.DireccionEscucha, out _),
+                "Eventos:Syslog:DireccionEscucha debe ser una dirección IP válida.")
+            .Validate(
+                opciones => opciones.Puerto is > 0 and <= 65535,
+                "Eventos:Syslog:Puerto debe estar entre 1 y 65535.")
+            .ValidateOnStart();
+        servicios.AddHostedService<ReceptorSyslogUdp>();
 
         return servicios;
     }

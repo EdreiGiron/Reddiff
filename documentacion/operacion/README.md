@@ -18,3 +18,4 @@ Procedimientos disponibles:
 - [Cliente web local](cliente-web-local.md).
 - [Captura SSH en un laboratorio autorizado](captura-ssh-laboratorio.md).
 - [Captura NETCONF en un laboratorio autorizado](captura-netconf-laboratorio.md).
+- [Eventos Syslog y captura automática en laboratorio](eventos-syslog-laboratorio.md).

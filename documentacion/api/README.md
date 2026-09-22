@@ -14,4 +14,6 @@ La creación y consulta de diferencias persistidas entre versiones del mismo dis
 
 La administración de líneas base y la verificación persistida de versiones se describen en [líneas base y verificaciones](baselines-y-verificaciones.md).
 
+La recepción deduplicada y la consulta del historial se describen en [eventos de cambio](eventos.md).
+
 El cliente consume rutas relativas bajo `/api`. Durante el desarrollo, Angular las dirige a `http://localhost:5088` mediante `cliente/proxy.conf.json`; esta configuración no forma parte de la compilación de producción.

@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Paquetes temporales
+/RedDiff_Etapa*.patch
+/RedDiff_Etapa*.zip

@@ -12,6 +12,10 @@ public interface IRepositorioDispositivos
     Task<IReadOnlyList<Dispositivo>> ListarAsync(
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Dispositivo>> ListarPorHostAsync(
+        string host,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExisteNombreAsync(
         string nombre,
         long? dispositivoIdExcluido = null,

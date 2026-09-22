@@ -151,10 +151,14 @@
             <strong>{{ capturas().length }}</strong>
             <span>Capturas visibles</span>
           </div>
+          <div>
+            <strong>{{ eventos().length }}</strong>
+            <span>Eventos visibles</span>
+          </div>
         </div>
         <p class="explicacion">
-          Cada operación válida crea una captura, una versión consecutiva y una huella SHA-256. La
-          evidencia anterior permanece disponible.
+          Cada consulta conserva su resultado. Los eventos automáticos solo crean una versión
+          consecutiva cuando la huella SHA-256 confirma un cambio de configuración.
         </p>
       </section>
     </div>
@@ -195,6 +199,15 @@
         (click)="cambiarVista('capturas')"
       >
         Capturas <span>{{ capturas().length }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="vista() === 'eventos'"
+        [class.activa]="vista() === 'eventos'"
+        (click)="cambiarVista('eventos')"
+      >
+        Eventos <span>{{ eventos().length }}</span>
       </button>
     </div>
 
@@ -275,8 +288,60 @@
                     <button class="enlace" type="button" (click)="abrirDetalle(captura.versionId)">
                       Ver versión
                     </button>
+                  } @else if (captura.estado === 'Completada' && captura.disparador === 'Evento') {
+                    <span>Sin cambios detectados</span>
                   } @else {
                     <span>{{ captura.error ?? 'Sin versión' }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (vista() === 'eventos' && eventos().length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th>Evento</th>
+              <th>Dispositivo</th>
+              <th>Fuente</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (evento of eventos(); track evento.id) {
+              <tr>
+                <td data-label="Evento">
+                  <strong>#{{ evento.id }}</strong>
+                </td>
+                <td data-label="Dispositivo">
+                  <strong>{{ evento.dispositivo }}</strong>
+                  <small>{{ evento.resumen }}</small>
+                </td>
+                <td data-label="Fuente">
+                  <span class="etiqueta">{{ evento.tipo }}</span>
+                  <small>{{ evento.fuente }}</small>
+                </td>
+                <td data-label="Estado">
+                  <span class="estado" [attr.data-estado]="evento.estado">{{ evento.estado }}</span>
+                </td>
+                <td data-label="Fecha">
+                  <strong>{{ evento.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</strong>
+                  <code [title]="evento.huella">{{ abreviarHash(evento.huella) }}</code>
+                </td>
+                <td data-label="Resultado">
+                  @if (evento.versionId) {
+                    <button class="enlace" type="button" (click)="abrirDetalle(evento.versionId)">
+                      Ver versión
+                    </button>
+                  } @else if (evento.estado === 'SinCambios') {
+                    <span>Sin cambios detectados</span>
+                  } @else {
+                    <span>Sin versión asociada</span>
                   }
                 </td>
               </tr>

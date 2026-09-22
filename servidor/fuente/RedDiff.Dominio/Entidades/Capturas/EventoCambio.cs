@@ -79,4 +79,9 @@ public sealed class EventoCambio
     {
         Estado = EstadoEventoCambio.Fallido;
     }
+
+    public void MarcarSinCambios()
+    {
+        Estado = EstadoEventoCambio.SinCambios;
+    }
 }

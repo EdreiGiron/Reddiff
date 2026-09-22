@@ -43,3 +43,27 @@ export interface CapturaRemotaResultado {
   captura: CapturaResumen;
   version: VersionConfiguracionResumen;
 }
+
+export type EstadoEventoCambio =
+  | 'Recibido'
+  | 'Validado'
+  | 'Encolado'
+  | 'Procesado'
+  | 'Rechazado'
+  | 'Duplicado'
+  | 'Fallido'
+  | 'SinCambios';
+
+export interface EventoCambioResumen {
+  id: number;
+  dispositivoId: number;
+  dispositivo: string;
+  fuente: string;
+  tipo: 'Syslog' | 'SnmpTrap' | 'SnmpInform';
+  fecha: string;
+  huella: string;
+  estado: EstadoEventoCambio;
+  resumen: string;
+  capturaId: number | null;
+  versionId: number | null;
+}

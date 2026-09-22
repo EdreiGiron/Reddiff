@@ -2,7 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { ServicioDispositivos } from '../dispositivos/servicio-dispositivos';
-import { CapturaResumen, VersionConfiguracionResumen } from './modelos-capturas';
+import {
+  CapturaResumen,
+  EventoCambioResumen,
+  VersionConfiguracionResumen,
+} from './modelos-capturas';
 import { PaginaCapturas } from './pagina-capturas';
 import { ServicioCapturas } from './servicio-capturas';
 
@@ -32,6 +36,28 @@ describe('PaginaCapturas', () => {
     estado: 'Activa',
     estable: false,
     usuarioSolicitante: 'tecnico.pruebas',
+  };
+  const evento: EventoCambioResumen = {
+    id: 6,
+    dispositivoId: 1,
+    dispositivo: 'nucleo-principal',
+    fuente: '192.168.200.2',
+    tipo: 'Syslog',
+    fecha: '2026-09-22T03:00:00Z',
+    huella: 'b'.repeat(64),
+    estado: 'Procesado',
+    resumen: '%SYS-5-CONFIG_I: Configured from console',
+    capturaId: 4,
+    versionId: 8,
+  };
+  const eventoSinCambios: EventoCambioResumen = {
+    ...evento,
+    id: 7,
+    huella: 'c'.repeat(64),
+    estado: 'SinCambios',
+    resumen: '%SYS-5-CONFIG_I: Configured from console',
+    capturaId: 5,
+    versionId: null,
   };
 
   it('debe mostrar dispositivos autorizados y el historial de versiones', () => {
@@ -71,6 +97,24 @@ describe('PaginaCapturas', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('#4');
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Completada');
+  });
+
+  it('debe mostrar los eventos Syslog y su versión asociada', () => {
+    configurarPrueba();
+    const fixture = TestBed.createComponent(PaginaCapturas);
+    fixture.detectChanges();
+    const botonEventos = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    ).find((boton) => boton.textContent?.includes('Eventos'))!;
+
+    botonEventos.click();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Syslog');
+    expect(texto).toContain('Procesado');
+    expect(texto).toContain('Configured from console');
+    expect(texto).toContain('Sin cambios detectados');
   });
 
   it('debe registrar una captura SSH desde un dispositivo preparado', () => {
@@ -168,6 +212,7 @@ describe('PaginaCapturas', () => {
           useValue: {
             listarCapturas: () => of([captura]),
             listarVersiones: () => of([version]),
+            listarEventos: () => of([eventoSinCambios, evento]),
             obtenerVersion: () => of({ ...version, contenido: 'hostname nucleo' }),
             capturarRemotamente: (dispositivoId: number) =>
               of({

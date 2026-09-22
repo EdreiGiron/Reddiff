@@ -25,6 +25,18 @@ internal sealed class RepositorioVersionesConfiguracion(ContextoRedDiff contexto
             .SingleOrDefaultAsync(version => version.Id == versionId, cancellationToken);
     }
 
+    public Task<VersionConfiguracion?> ObtenerUltimaAsync(
+        long dispositivoId,
+        CancellationToken cancellationToken = default)
+    {
+        return contexto.VersionesConfiguracion
+            .AsNoTracking()
+            .Where(version => version.DispositivoId == dispositivoId)
+            .OrderByDescending(version => version.Numero)
+            .ThenByDescending(version => version.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     private IQueryable<VersionConfiguracion> ConsultaCompleta()
     {
         return contexto.VersionesConfiguracion

@@ -23,6 +23,7 @@ La operación nunca actualiza una versión existente. SSH utiliza una sesión co
 - Una respuesta vacía, demasiado grande o binaria se registra como captura fallida y no se almacena como versión.
 - Una respuesta con errores del CLI, incluido `invalid autocommand`, se registra como captura fallida y no se almacena como versión.
 - Una respuesta NETCONF sin una capacidad base compatible, sin elemento `<data>` o con `<rpc-error>` se registra como captura fallida y no se almacena como versión.
+- Una captura originada por evento cuya huella coincida con la última versión se conserva como consulta completada, pero no crea un número de versión redundante.
 - Las líneas con credenciales, comunidades o claves reconocibles se sustituyen por una marca `[PROTEGIDO: ...]` antes de calcular la huella y persistir el contenido.
 - Los elementos y atributos XML cuyo nombre identifica contraseñas, secretos, comunidades o claves se sustituyen por `[PROTEGIDO]` antes de calcular la huella.
 - Un bloque de clave privada se elimina completo. Si el contenido no puede sanearse de forma segura, la captura falla y no crea una versión.

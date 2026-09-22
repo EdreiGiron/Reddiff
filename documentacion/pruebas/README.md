@@ -13,4 +13,6 @@ Los adaptadores externos deben probarse primero mediante dobles controlados. Est
 
 El adaptador SSH conserva sus pruebas de identidad del host separadas de la red: calculan la huella SHA-256 con claves públicas efímeras y comprueban algoritmos compatibles. Las pruebas de API sustituyen el conector real antes de construir el servicio para garantizar que una ejecución automatizada nunca abra una conexión SSH.
 
+El flujo Syslog se verifica en dos niveles: las pruebas unitarias comprueban UTF-8 estricto, límites, normalización, saneamiento y huellas; las pruebas de integración confirman autorización por IP, deduplicación de eventos y supresión de versiones cuando dos capturas consecutivas tienen la misma huella. La interoperabilidad UDP con IOS se valida únicamente en el laboratorio autorizado.
+
 Cada requisito funcional deberá relacionarse con al menos un criterio de aceptación y una evidencia de prueba.

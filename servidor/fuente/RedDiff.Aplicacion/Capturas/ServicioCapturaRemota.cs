@@ -112,37 +112,120 @@ public sealed class ServicioCapturaRemota
                 cancellationToken);
         }
 
+        ResultadoOperacion<CapturaPorEventoResultado> captura =
+            await CapturarDispositivoAsync(
+                usuarioId,
+                usuario.NombreUsuario,
+                null,
+                dispositivo,
+                cancellationToken);
+
+        if (!captura.Exitoso)
+        {
+            return ResultadoOperacion<CapturaRemotaResultado>.Fallido(
+                captura.Error!.Codigo,
+                captura.Error.Mensaje);
+        }
+
+        CapturaPorEventoResultado valor = captura.Valor!;
+        if (valor.Version is null)
+        {
+            return ResultadoOperacion<CapturaRemotaResultado>.Fallido(
+                CodigosErrorOperacion.Conflicto,
+                "La captura manual finalizó sin producir una versión.");
+        }
+
+        return ResultadoOperacion<CapturaRemotaResultado>.Correcto(
+            new CapturaRemotaResultado(valor.Captura, valor.Version));
+    }
+
+    public Task<ResultadoOperacion<CapturaPorEventoResultado>> CapturarPorEventoAsync(
+        EventoCambio evento,
+        Dispositivo dispositivo,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(evento);
+        ArgumentNullException.ThrowIfNull(dispositivo);
+
+        if (evento.DispositivoId != dispositivo.Id)
+        {
+            return Task.FromResult(ResultadoOperacion<CapturaPorEventoResultado>.Fallido(
+                CodigosErrorOperacion.Validacion,
+                "El evento no pertenece al dispositivo indicado."));
+        }
+
+        if (evento.Estado != EstadoEventoCambio.Encolado)
+        {
+            return Task.FromResult(ResultadoOperacion<CapturaPorEventoResultado>.Fallido(
+                CodigosErrorOperacion.Conflicto,
+                "Solo un evento encolado puede originar una captura."));
+        }
+
+        if (dispositivo.Estado != EstadoDispositivo.Autorizado
+            || !dispositivo.AccesoRemotoConfigurado)
+        {
+            return Task.FromResult(ResultadoOperacion<CapturaPorEventoResultado>.Fallido(
+                CodigosErrorOperacion.Prohibido,
+                "El dispositivo no está preparado para una captura automática."));
+        }
+
+        return CapturarDispositivoAsync(
+            null,
+            null,
+            evento,
+            dispositivo,
+            cancellationToken);
+    }
+
+    private async Task<ResultadoOperacion<CapturaPorEventoResultado>> CapturarDispositivoAsync(
+        long? usuarioId,
+        string? usuarioSolicitante,
+        EventoCambio? evento,
+        Dispositivo dispositivo,
+        CancellationToken cancellationToken)
+    {
+
         if (!conectores.TryGetValue(dispositivo.Protocolo, out IConectorCapturaRemota? conector))
         {
-            return await FallarAntesDeCapturaAsync(
-                usuarioId,
-                dispositivo.Id,
-                CodigosErrorOperacion.NoDisponible,
-                $"El conector {dispositivo.Protocolo.ToString().ToUpperInvariant()} todavía no está habilitado.",
-                cancellationToken);
+            const string codigo = CodigosErrorOperacion.NoDisponible;
+            string mensaje = $"El conector {dispositivo.Protocolo.ToString().ToUpperInvariant()} todavía no está habilitado.";
+            if (usuarioId.HasValue)
+            {
+                await AuditarFalloAntesDeCapturaAsync(
+                    usuarioId,
+                    dispositivo.Id,
+                    mensaje,
+                    cancellationToken);
+            }
+
+            return ResultadoOperacion<CapturaPorEventoResultado>.Fallido(codigo, mensaje);
         }
 
         if (!protectorSecreto.IntentarDesproteger(
                 dispositivo.SecretoAccesoProtegido,
                 out string secreto))
         {
-            return await FallarAntesDeCapturaAsync(
-                usuarioId,
-                dispositivo.Id,
-                CodigosErrorOperacion.Conflicto,
-                "El secreto protegido no pudo recuperarse. Reemplace el acceso remoto antes de intentar la captura.",
-                cancellationToken);
+            const string codigo = CodigosErrorOperacion.Conflicto;
+            const string mensaje = "El secreto protegido no pudo recuperarse. Reemplace el acceso remoto antes de intentar la captura.";
+            if (usuarioId.HasValue)
+            {
+                await AuditarFalloAntesDeCapturaAsync(
+                    usuarioId,
+                    dispositivo.Id,
+                    mensaje,
+                    cancellationToken);
+            }
+
+            return ResultadoOperacion<CapturaPorEventoResultado>.Fallido(codigo, mensaje);
         }
 
         DateTimeOffset fecha = reloj.GetUtcNow();
         MedioCaptura medio = dispositivo.Protocolo == ProtocoloConexion.Ssh
             ? MedioCaptura.Ssh
             : MedioCaptura.Netconf;
-        Captura captura = Captura.CrearBajoDemanda(
-            dispositivo.Id,
-            usuarioId,
-            medio,
-            fecha);
+        Captura captura = evento is null
+            ? Captura.CrearBajoDemanda(dispositivo.Id, usuarioId!.Value, medio, fecha)
+            : Captura.CrearPorEvento(dispositivo.Id, evento.Id, medio, fecha);
         captura.Iniciar();
         repositorioCapturas.Agregar(captura);
         await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
@@ -226,6 +309,31 @@ public sealed class ServicioCapturaRemota
         }
 
         ContenidoConfiguracionProcesado contenido = procesamiento.Valor!;
+        VersionConfiguracion? ultimaVersion = await repositorioVersiones.ObtenerUltimaAsync(
+            dispositivo.Id,
+            CancellationToken.None);
+        if (evento is not null
+            && string.Equals(
+                ultimaVersion?.Hash,
+                contenido.Hash,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            captura.Completar();
+            RegistrarAuditoria(
+                usuarioId,
+                captura.Id,
+                EstadoAuditoria.Exitoso,
+                $"La captura automática de {dispositivo.Nombre} no generó una versión porque "
+                    + $"su huella {contenido.Hash} coincide con la versión vigente más reciente.");
+            await unidadDeTrabajo.GuardarCambiosAsync(CancellationToken.None);
+
+            return ResultadoOperacion<CapturaPorEventoResultado>.Correcto(
+                new CapturaPorEventoResultado(
+                    MapearCaptura(captura, dispositivo.Nombre, usuarioSolicitante, null),
+                    null,
+                    CambioDetectado: false));
+        }
+
         int numero = await repositorioVersiones.ObtenerSiguienteNumeroAsync(
             dispositivo.Id,
             CancellationToken.None);
@@ -240,7 +348,9 @@ public sealed class ServicioCapturaRemota
             contenido.Contenido,
             contenido.Hash,
             fecha,
-            $"Captura remota de solo lectura mediante {dispositivo.Protocolo.ToString().ToUpperInvariant()}.");
+            evento is null
+                ? $"Captura remota de solo lectura mediante {dispositivo.Protocolo.ToString().ToUpperInvariant()}."
+                : $"Captura automática originada por evento Syslog mediante {dispositivo.Protocolo.ToString().ToUpperInvariant()}.");
         repositorioVersiones.Agregar(version);
         captura.Completar();
         RegistrarAuditoria(
@@ -251,34 +361,31 @@ public sealed class ServicioCapturaRemota
                 + $"{dispositivo.Protocolo.ToString().ToUpperInvariant()}, con huella {contenido.Hash}.");
         await unidadDeTrabajo.GuardarCambiosAsync(CancellationToken.None);
 
-        return ResultadoOperacion<CapturaRemotaResultado>.Correcto(
-            new CapturaRemotaResultado(
-                MapearCaptura(captura, dispositivo.Nombre, usuario.NombreUsuario, version.Id),
-                MapearVersion(version, dispositivo.Nombre, usuario.NombreUsuario)));
+        return ResultadoOperacion<CapturaPorEventoResultado>.Correcto(
+            new CapturaPorEventoResultado(
+                MapearCaptura(captura, dispositivo.Nombre, usuarioSolicitante, version.Id),
+                MapearVersion(version, dispositivo.Nombre, usuarioSolicitante),
+                CambioDetectado: true));
     }
 
     private async Task<ResultadoOperacion<CapturaRemotaResultado>> FallarAntesDeCapturaAsync(
-        long usuarioId,
+        long? usuarioId,
         long? dispositivoId,
         string codigo,
         string mensaje,
         CancellationToken cancellationToken)
     {
-        repositorioAuditorias.Agregar(new Auditoria(
+        await AuditarFalloAntesDeCapturaAsync(
             usuarioId,
-            AccionAuditoria,
-            "Dispositivo",
             dispositivoId,
-            reloj.GetUtcNow(),
-            EstadoAuditoria.Fallido,
-            mensaje));
-        await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
+            mensaje,
+            cancellationToken);
 
         return ResultadoOperacion<CapturaRemotaResultado>.Fallido(codigo, mensaje);
     }
 
-    private async Task<ResultadoOperacion<CapturaRemotaResultado>> FallarCapturaAsync(
-        long usuarioId,
+    private async Task<ResultadoOperacion<CapturaPorEventoResultado>> FallarCapturaAsync(
+        long? usuarioId,
         Dispositivo dispositivo,
         Captura captura,
         string codigo,
@@ -293,11 +400,28 @@ public sealed class ServicioCapturaRemota
             $"Falló la captura remota de {dispositivo.Nombre}: {mensaje}");
         await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
 
-        return ResultadoOperacion<CapturaRemotaResultado>.Fallido(codigo, mensaje);
+        return ResultadoOperacion<CapturaPorEventoResultado>.Fallido(codigo, mensaje);
+    }
+
+    private async Task AuditarFalloAntesDeCapturaAsync(
+        long? usuarioId,
+        long? dispositivoId,
+        string mensaje,
+        CancellationToken cancellationToken)
+    {
+        repositorioAuditorias.Agregar(new Auditoria(
+            usuarioId,
+            AccionAuditoria,
+            "Dispositivo",
+            dispositivoId,
+            reloj.GetUtcNow(),
+            EstadoAuditoria.Fallido,
+            mensaje));
+        await unidadDeTrabajo.GuardarCambiosAsync(cancellationToken);
     }
 
     private void RegistrarAuditoria(
-        long usuarioId,
+        long? usuarioId,
         long capturaId,
         EstadoAuditoria estado,
         string detalle)
@@ -338,8 +462,8 @@ public sealed class ServicioCapturaRemota
     private static CapturaResumen MapearCaptura(
         Captura captura,
         string dispositivo,
-        string usuarioSolicitante,
-        long versionId)
+        string? usuarioSolicitante,
+        long? versionId)
     {
         return new CapturaResumen(
             captura.Id,
@@ -357,7 +481,7 @@ public sealed class ServicioCapturaRemota
     private static VersionConfiguracionResumen MapearVersion(
         VersionConfiguracion version,
         string dispositivo,
-        string usuarioSolicitante)
+        string? usuarioSolicitante)
     {
         return new VersionConfiguracionResumen(
             version.Id,

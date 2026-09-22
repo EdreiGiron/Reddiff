@@ -5,6 +5,7 @@ import {
   CapturaResumen,
   CapturaRemotaResultado,
   CargaArchivoResultado,
+  EventoCambioResumen,
   VersionConfiguracionDetalle,
   VersionConfiguracionResumen,
 } from './modelos-capturas';
@@ -46,6 +47,12 @@ export class ServicioCapturas {
 
   capturarRemotamente(dispositivoId: number): Observable<CapturaRemotaResultado> {
     return this.http.post<CapturaRemotaResultado>('/api/capturas/remota', { dispositivoId });
+  }
+
+  listarEventos(dispositivoId?: number): Observable<EventoCambioResumen[]> {
+    return this.http.get<EventoCambioResumen[]>('/api/eventos', {
+      params: this.parametrosDispositivo(dispositivoId),
+    });
   }
 
   private parametrosDispositivo(dispositivoId?: number): HttpParams {

@@ -8,5 +8,6 @@ public enum EstadoEventoCambio
     Procesado = 4,
     Rechazado = 5,
     Duplicado = 6,
-    Fallido = 7
+    Fallido = 7,
+    SinCambios = 8
 }

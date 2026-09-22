@@ -84,6 +84,15 @@ try {
         -Valor (Obtener-ValorEntorno -Nombre 'REDDIFF_BD_USUARIO_APLICACION' -ValorPredeterminado 'reddiff_app')
     Establecer-VariableTemporal -Nombre 'BaseDatos__Contrasena' -Valor $Contrasena
     Establecer-VariableTemporal -Nombre 'BaseDatos__ModoSsl' -Valor 'Disable'
+    Establecer-VariableTemporal `
+        -Nombre 'Eventos__Syslog__Habilitado' `
+        -Valor (Obtener-ValorEntorno -Nombre 'REDDIFF_SYSLOG_HABILITADO' -ValorPredeterminado 'false')
+    Establecer-VariableTemporal `
+        -Nombre 'Eventos__Syslog__DireccionEscucha' `
+        -Valor (Obtener-ValorEntorno -Nombre 'REDDIFF_SYSLOG_DIRECCION' -ValorPredeterminado '0.0.0.0')
+    Establecer-VariableTemporal `
+        -Nombre 'Eventos__Syslog__Puerto' `
+        -Valor (Obtener-ValorEntorno -Nombre 'REDDIFF_SYSLOG_PUERTO' -ValorPredeterminado '5514')
 
     $ArgumentosDotnet = @(
         'run',

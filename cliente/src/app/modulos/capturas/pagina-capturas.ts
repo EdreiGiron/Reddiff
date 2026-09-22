@@ -18,12 +18,13 @@ import {
   CapturaResumen,
   CapturaRemotaResultado,
   CargaArchivoResultado,
+  EventoCambioResumen,
   VersionConfiguracionDetalle,
   VersionConfiguracionResumen,
 } from './modelos-capturas';
 import { ServicioCapturas } from './servicio-capturas';
 
-type VistaEvidencia = 'versiones' | 'capturas';
+type VistaEvidencia = 'versiones' | 'capturas' | 'eventos';
 
 @Component({
   selector: 'rd-pagina-capturas',
@@ -42,6 +43,7 @@ export class PaginaCapturas implements OnInit {
   protected readonly dispositivos = signal<DispositivoResumen[]>([]);
   protected readonly capturas = signal<CapturaResumen[]>([]);
   protected readonly versiones = signal<VersionConfiguracionResumen[]>([]);
+  protected readonly eventos = signal<EventoCambioResumen[]>([]);
   protected readonly archivoSeleccionado = signal<File | null>(null);
   protected readonly versionDetalle = signal<VersionConfiguracionDetalle | null>(null);
   protected readonly cargando = signal(true);
@@ -235,13 +237,15 @@ export class PaginaCapturas implements OnInit {
       dispositivos: this.servicioDispositivos.listar(),
       capturas: this.servicioCapturas.listarCapturas(),
       versiones: this.servicioCapturas.listarVersiones(),
+      eventos: this.servicioCapturas.listarEventos(),
     })
       .pipe(finalize(() => this.cargando.set(false)))
       .subscribe({
-        next: ({ dispositivos, capturas, versiones }) => {
+        next: ({ dispositivos, capturas, versiones, eventos }) => {
           this.dispositivos.set(dispositivos);
           this.capturas.set(capturas);
           this.versiones.set(versiones);
+          this.eventos.set(eventos);
           const primerAutorizado = dispositivos.find(
             (dispositivo) => dispositivo.estado === 'Autorizado',
           );
@@ -270,12 +274,14 @@ export class PaginaCapturas implements OnInit {
     forkJoin({
       capturas: this.servicioCapturas.listarCapturas(dispositivoId),
       versiones: this.servicioCapturas.listarVersiones(dispositivoId),
+      eventos: this.servicioCapturas.listarEventos(dispositivoId),
     })
       .pipe(finalize(() => this.cargando.set(false)))
       .subscribe({
-        next: ({ capturas, versiones }) => {
+        next: ({ capturas, versiones, eventos }) => {
           this.capturas.set(capturas);
           this.versiones.set(versiones);
+          this.eventos.set(eventos);
         },
         error: (error: unknown) =>
           this.mensajeError.set(

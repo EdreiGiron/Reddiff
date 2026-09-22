@@ -63,10 +63,8 @@ El adaptador NETCONF abre una sesión nueva sobre SSH, valida la misma identidad
 
 La respuesta debe incluir `<data>` y no puede contener `<rpc-error>`. Antes de pasar al procesamiento común, los elementos, atributos y fragmentos de configuración nativa que identifiquen contraseñas, secretos, comunidades o claves se sustituyen por `[PROTEGIDO]`. La validación automatizada no abre conexiones reales. La prueba controlada requiere un equipo compatible y el procedimiento de [captura NETCONF en laboratorio](../operacion/captura-netconf-laboratorio.md).
 
-## Límites pendientes
+## Recepción de avisos
 
-Esta etapa no incluye:
-
-- recepción de avisos SNMP o Syslog.
+Syslog se recibe en un puerto UDP configurable y deshabilitado por defecto. El origen debe coincidir con un único dispositivo autorizado cuya fuente sea `Syslog`; el datagrama se limita, normaliza, sanea y deduplica antes de iniciar la captura fija de solo lectura. La configuración resultante también se compara por su huella SHA-256 con la última versión, por lo que un aviso sin cambio real no duplica contenido histórico. RedDiff no interpreta el mensaje como una orden. La recepción SNMP permanece pendiente.
 
 Los conectores simulados solo existen en el proyecto de pruebas; los adaptadores SSH y NETCONF reales se registran en la aplicación normal. Ningún secreto ni huella de producción debe utilizarse en pruebas: se debe trabajar con GNS3 o con un equipo expresamente autorizado.

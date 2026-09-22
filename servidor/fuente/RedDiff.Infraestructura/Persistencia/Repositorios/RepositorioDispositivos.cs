@@ -32,6 +32,16 @@ internal sealed class RepositorioDispositivos(ContextoRedDiff contexto)
             .ToArrayAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Dispositivo>> ListarPorHostAsync(
+        string host,
+        CancellationToken cancellationToken = default)
+    {
+        return await contexto.Dispositivos
+            .Where(dispositivo => dispositivo.Host == host)
+            .OrderBy(dispositivo => dispositivo.Id)
+            .ToArrayAsync(cancellationToken);
+    }
+
     public Task<bool> ExisteNombreAsync(
         string nombre,
         long? dispositivoIdExcluido = null,

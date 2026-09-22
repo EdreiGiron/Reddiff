@@ -57,6 +57,11 @@ public sealed record CapturaRemotaResultado(
     CapturaResumen Captura,
     VersionConfiguracionResumen Version);
 
+public sealed record CapturaPorEventoResultado(
+    CapturaResumen Captura,
+    VersionConfiguracionResumen? Version,
+    bool CambioDetectado);
+
 public sealed record ArchivoConfiguracionProcesado(
     string NombreArchivo,
     string Contenido,
