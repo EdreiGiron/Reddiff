@@ -17,3 +17,4 @@ Procedimientos disponibles:
 - [API local y acceso a PostgreSQL](api-local.md).
 - [Cliente web local](cliente-web-local.md).
 - [Captura SSH en un laboratorio autorizado](captura-ssh-laboratorio.md).
+- [Captura NETCONF en un laboratorio autorizado](captura-netconf-laboratorio.md).

@@ -4,7 +4,7 @@
 
 Este procedimiento comprueba la captura de una configuración Cisco mediante SSH desde RedDiff. Utilice únicamente GNS3 o un dispositivo expresamente autorizado. El adaptador utiliza una sesión controlada para ejecutar `terminal length 0` y `show running-config view full`; no ofrece consola, modo de configuración ni envío de comandos personalizados.
 
-NETCONF no está habilitado en este bloque.
+NETCONF se valida mediante un procedimiento separado y requiere una imagen compatible con ese protocolo.
 
 ## Requisitos previos
 
@@ -79,7 +79,7 @@ Si el acceso ya estaba configurado con otra cuenta, utilice **Reemplazar acceso*
 ## Ejecutar la captura
 
 1. Abra **Capturas**.
-2. En **Captura SSH**, seleccione el dispositivo preparado.
+2. En **Captura remota**, seleccione el dispositivo SSH preparado.
 3. Presione **Capturar configuración** una sola vez.
 4. Espere el mensaje que indique el número de versión creado.
 5. Abra la nueva versión y compruebe dispositivo, origen `SSH`, fecha, usuario solicitante, contenido y huella SHA-256.

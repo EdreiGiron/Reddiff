@@ -9,6 +9,7 @@ using RedDiff.Aplicacion.Abstracciones.Red;
 using RedDiff.Aplicacion.Abstracciones.Seguridad;
 using RedDiff.Infraestructura.Persistencia;
 using RedDiff.Infraestructura.Persistencia.Repositorios;
+using RedDiff.Infraestructura.Red.Netconf;
 using RedDiff.Infraestructura.Red.Ssh;
 using RedDiff.Infraestructura.Seguridad;
 
@@ -98,6 +99,7 @@ public static class ConfiguracionServicios
             IProtectorSecretoDispositivo,
             ProtectorSecretoDispositivoDataProtection>();
         servicios.AddSingleton<IConectorCapturaRemota, ConectorCapturaSsh>();
+        servicios.AddSingleton<IConectorCapturaRemota, ConectorCapturaNetconf>();
 
         return servicios;
     }

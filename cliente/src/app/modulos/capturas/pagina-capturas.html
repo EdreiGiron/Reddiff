@@ -85,9 +85,9 @@
         <div class="panel__encabezado">
           <div>
             <p class="sobrelinea">Consulta al equipo</p>
-            <h2 id="titulo-remota">Captura SSH</h2>
+            <h2 id="titulo-remota">Captura remota</h2>
           </div>
-          <span class="icono-remoto" aria-hidden="true">SSH</span>
+          <span class="icono-remoto" aria-hidden="true">{{ etiquetaProtocoloRemoto() }}</span>
         </div>
 
         @if (dispositivosCapturables().length) {
@@ -97,7 +97,8 @@
               <select formControlName="dispositivoId">
                 @for (dispositivo of dispositivosCapturables(); track dispositivo.id) {
                   <option [ngValue]="dispositivo.id">
-                    {{ dispositivo.nombre }} · {{ dispositivo.host }}:{{ dispositivo.puerto }}
+                    {{ dispositivo.nombre }} · {{ etiquetaProtocoloRemoto(dispositivo.id) }} ·
+                    {{ dispositivo.host }}:{{ dispositivo.puerto }}
                   </option>
                 }
               </select>
@@ -105,12 +106,21 @@
 
             <div class="nota-seguridad" role="note">
               <strong>Operación de solo lectura</strong>
-              <p>
-                RedDiff verificará la huella aprobada, desactivará la paginación solo durante la
-                sesión y ejecutará <code>show running-config view full</code>. No enviará cambios a
-                la configuración y omitirá los datos sensibles reconocidos antes de almacenar la
-                versión.
-              </p>
+              @if (protocoloRemotoSeleccionado() === 'Netconf') {
+                <p>
+                  RedDiff verificará la huella aprobada y solicitará únicamente la configuración
+                  <code>running</code> mediante <code>&lt;get-config&gt;</code>. No enviará
+                  operaciones de escritura y omitirá los datos sensibles reconocidos antes de
+                  almacenar la versión.
+                </p>
+              } @else {
+                <p>
+                  RedDiff verificará la huella aprobada, desactivará la paginación solo durante la
+                  sesión y ejecutará <code>show running-config view full</code>. No enviará cambios
+                  a la configuración y omitirá los datos sensibles reconocidos antes de almacenar la
+                  versión.
+                </p>
+              }
             </div>
 
             <button
@@ -124,7 +134,7 @@
           </form>
         } @else if (!cargando()) {
           <div class="estado-vacio estado-vacio--remoto">
-            <strong>No hay equipos SSH preparados</strong>
+            <strong>No hay equipos preparados</strong>
             <p>Autoriza un dispositivo y configura su acceso remoto para habilitar esta acción.</p>
           </div>
         }

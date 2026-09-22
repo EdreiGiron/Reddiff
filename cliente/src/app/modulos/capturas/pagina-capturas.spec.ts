@@ -89,6 +89,31 @@ describe('PaginaCapturas', () => {
     expect(texto).toContain('v3');
   });
 
+  it('debe permitir una captura NETCONF desde un dispositivo preparado', () => {
+    configurarPrueba();
+    const fixture = TestBed.createComponent(PaginaCapturas);
+    fixture.detectChanges();
+    const formularioRemoto = (fixture.nativeElement as HTMLElement).querySelector(
+      '.panel--remota form',
+    )!;
+    const selector = formularioRemoto.querySelector<HTMLSelectElement>('select')!;
+    const opcionNetconf = Array.from(selector.options).find((opcion) =>
+      opcion.textContent?.includes('netconf-listo'),
+    )!;
+
+    selector.value = opcionNetconf.value;
+    selector.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    formularioRemoto
+      .querySelector<HTMLButtonElement>('[data-testid="capturar-remotamente"]')!
+      .click();
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('La captura NETCONF creó la versión 3');
+    expect(texto).toContain('solicitará únicamente la configuración');
+  });
+
   function configurarPrueba(): void {
     TestBed.configureTestingModule({
       imports: [PaginaCapturas],
@@ -123,6 +148,18 @@ describe('PaginaCapturas', () => {
                   estado: 'NoAutorizado',
                   accesoRemotoConfigurado: false,
                 },
+                {
+                  id: 3,
+                  nombre: 'netconf-listo',
+                  host: 'netconf.ejemplo.local',
+                  tipo: 'Router',
+                  modelo: 'IOS XE',
+                  protocolo: 'Netconf',
+                  puerto: 830,
+                  fuenteEventos: null,
+                  estado: 'Autorizado',
+                  accesoRemotoConfigurado: true,
+                },
               ]),
           },
         },
@@ -132,7 +169,7 @@ describe('PaginaCapturas', () => {
             listarCapturas: () => of([captura]),
             listarVersiones: () => of([version]),
             obtenerVersion: () => of({ ...version, contenido: 'hostname nucleo' }),
-            capturarRemotamente: () =>
+            capturarRemotamente: (dispositivoId: number) =>
               of({
                 captura: {
                   ...captura,
@@ -145,7 +182,7 @@ describe('PaginaCapturas', () => {
                   id: 9,
                   capturaId: 5,
                   numero: 3,
-                  origen: 'CapturaSsh',
+                  origen: dispositivoId === 3 ? 'CapturaNetconf' : 'CapturaSsh',
                 },
               }),
           },

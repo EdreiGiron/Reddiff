@@ -59,10 +59,7 @@ export class PaginaCapturas implements OnInit {
 
   protected readonly dispositivosCapturables = computed(() =>
     this.dispositivos().filter(
-      (dispositivo) =>
-        dispositivo.estado === 'Autorizado' &&
-        dispositivo.protocolo === 'Ssh' &&
-        dispositivo.accesoRemotoConfigurado,
+      (dispositivo) => dispositivo.estado === 'Autorizado' && dispositivo.accesoRemotoConfigurado,
     ),
   );
 
@@ -145,11 +142,12 @@ export class PaginaCapturas implements OnInit {
     this.mensajeExito.set(null);
     if (this.formularioRemoto.invalid) {
       this.formularioRemoto.markAllAsTouched();
-      this.mensajeError.set('Selecciona un dispositivo SSH con acceso remoto configurado.');
+      this.mensajeError.set('Selecciona un dispositivo con acceso remoto configurado.');
       return;
     }
 
     const dispositivoId = this.formularioRemoto.controls.dispositivoId.value;
+    const protocolo = this.etiquetaProtocoloRemoto(dispositivoId);
     this.capturandoRemotamente.set(true);
     this.servicioCapturas
       .capturarRemotamente(dispositivoId)
@@ -158,15 +156,33 @@ export class PaginaCapturas implements OnInit {
         next: (resultado) => {
           this.registrarResultado(resultado);
           this.mensajeExito.set(
-            `La captura SSH creó la versión ${resultado.version.numero} con su huella de integridad.`,
+            `La captura ${protocolo} creó la versión ${resultado.version.numero} con su huella de integridad.`,
           );
           this.vista.set('versiones');
         },
         error: (error: unknown) =>
           this.mensajeError.set(
-            obtenerMensajeError(error, 'No fue posible capturar la configuración mediante SSH.'),
+            obtenerMensajeError(
+              error,
+              `No fue posible capturar la configuración mediante ${protocolo}.`,
+            ),
           ),
       });
+  }
+
+  protected protocoloRemotoSeleccionado(): 'Ssh' | 'Netconf' {
+    const dispositivoId = this.formularioRemoto.controls.dispositivoId.value;
+    return (
+      this.dispositivos().find((dispositivo) => dispositivo.id === dispositivoId)?.protocolo ??
+      'Ssh'
+    );
+  }
+
+  protected etiquetaProtocoloRemoto(dispositivoId?: number): string {
+    const id = dispositivoId ?? this.formularioRemoto.controls.dispositivoId.value;
+    return this.dispositivos().find((dispositivo) => dispositivo.id === id)?.protocolo === 'Netconf'
+      ? 'NETCONF'
+      : 'SSH';
   }
 
   protected cambiarFiltro(evento: Event): void {
@@ -234,9 +250,7 @@ export class PaginaCapturas implements OnInit {
           }
           const primerCapturable = dispositivos.find(
             (dispositivo) =>
-              dispositivo.estado === 'Autorizado' &&
-              dispositivo.protocolo === 'Ssh' &&
-              dispositivo.accesoRemotoConfigurado,
+              dispositivo.estado === 'Autorizado' && dispositivo.accesoRemotoConfigurado,
           );
           if (primerCapturable && !this.formularioRemoto.controls.dispositivoId.value) {
             this.formularioRemoto.controls.dispositivoId.setValue(primerCapturable.id);

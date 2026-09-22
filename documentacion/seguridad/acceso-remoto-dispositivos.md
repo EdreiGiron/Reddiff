@@ -2,9 +2,9 @@
 
 ## Alcance actual
 
-El modelo, la migración incremental y la administración web establecen las condiciones de seguridad para capturas mediante SSH o NETCONF. La captura bajo demanda mediante SSH ya utiliza un adaptador real de solo lectura. NETCONF permanece deshabilitado hasta incorporar su adaptador específico.
+El modelo, la migración incremental y la administración web establecen las condiciones de seguridad para capturas mediante SSH o NETCONF. Ambos protocolos utilizan adaptadores reales limitados a consultas de solo lectura.
 
-La captura posterior será exclusivamente de lectura. No se incorporarán operaciones para entrar en modo de configuración, aplicar cambios ni ejecutar comandos arbitrarios.
+La captura es exclusivamente de lectura. No existen operaciones para entrar en modo de configuración, aplicar cambios ni ejecutar comandos o RPC arbitrarios.
 
 ## Datos protegidos
 
@@ -57,11 +57,16 @@ El adaptador SSH abre una conexión nueva para cada captura, compara el algoritm
 
 Las pruebas automatizadas reemplazan el adaptador por dobles controlados y nunca contactan la red. Una prueba del adaptador real requiere un laboratorio autorizado y el procedimiento de [captura SSH en laboratorio](../operacion/captura-ssh-laboratorio.md).
 
+## Adaptador NETCONF habilitado
+
+El adaptador NETCONF abre una sesión nueva sobre SSH, valida la misma identidad criptográfica aprobada y comprueba que el servidor anuncie una capacidad base NETCONF 1.0 o 1.1. La solicitud está fija en el código y contiene únicamente `<get-config>` con `<running/>`; la API y el navegador no pueden proporcionar RPC alternativos. No se implementan `<edit-config>`, `<copy-config>`, `<delete-config>` ni `commit`.
+
+La respuesta debe incluir `<data>` y no puede contener `<rpc-error>`. Antes de pasar al procesamiento común, los elementos, atributos y fragmentos de configuración nativa que identifiquen contraseñas, secretos, comunidades o claves se sustituyen por `[PROTEGIDO]`. La validación automatizada no abre conexiones reales. La prueba controlada requiere un equipo compatible y el procedimiento de [captura NETCONF en laboratorio](../operacion/captura-netconf-laboratorio.md).
+
 ## Límites pendientes
 
 Esta etapa no incluye:
 
-- adaptador real de NETCONF;
 - recepción de avisos SNMP o Syslog.
 
-Los conectores simulados solo existen en el proyecto de pruebas. El adaptador SSH real se registra en la aplicación normal; NETCONF no intenta abrir la red y devuelve un fallo controlado mientras no exista su implementación. Ningún secreto ni huella de producción debe utilizarse en pruebas: se debe trabajar con GNS3 o con un equipo expresamente autorizado.
+Los conectores simulados solo existen en el proyecto de pruebas; los adaptadores SSH y NETCONF reales se registran en la aplicación normal. Ningún secreto ni huella de producción debe utilizarse en pruebas: se debe trabajar con GNS3 o con un equipo expresamente autorizado.

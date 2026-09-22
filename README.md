@@ -2,7 +2,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario, carga controlada, captura SSH, comparación diferencial, líneas base y verificación de cumplimiento implementados. NETCONF y la recepción de eventos permanecen pendientes. La solución aún no debe utilizarse en producción.
+> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario, carga controlada, captura SSH y NETCONF, comparación diferencial, líneas base y verificación de cumplimiento implementados. La recepción de eventos permanece pendiente. La solución aún no debe utilizarse en producción.
 
 ## Tecnologías principales
 
@@ -97,7 +97,7 @@ La comparación diferencial permite seleccionar dos versiones del mismo disposit
 
 Las líneas base permiten definir criterios inmutables por dispositivo o tipo, asociar opcionalmente una versión histórica estable y verificar versiones sin alterar el equipo. Administradores y técnicos pueden ejecutar y consultar verificaciones; únicamente el administrador crea, activa o desactiva líneas base. Consulte [documentacion/api/baselines-y-verificaciones.md](documentacion/api/baselines-y-verificaciones.md).
 
-La captura remota mediante SSH comprueba autorización, acceso protegido, límite de tiempo, identidad criptográfica del host y contenido antes de crear una versión. El adaptador utiliza una sesión controlada que solo desactiva la paginación y ejecuta `show running-config view full`; no admite comandos proporcionados por el usuario ni modifica la configuración del equipo. NETCONF todavía responde como no disponible. La prueba controlada en GNS3 se describe en [documentacion/operacion/captura-ssh-laboratorio.md](documentacion/operacion/captura-ssh-laboratorio.md).
+La captura remota mediante SSH o NETCONF comprueba autorización, acceso protegido, límite de tiempo, identidad criptográfica del host y contenido antes de crear una versión. SSH utiliza una sesión controlada que solo desactiva la paginación y ejecuta `show running-config view full`; NETCONF envía exclusivamente un RPC `<get-config>` sobre el almacén `running`. Ningún adaptador admite órdenes proporcionadas por el usuario ni modifica la configuración del equipo. Las pruebas controladas se describen en [captura SSH](documentacion/operacion/captura-ssh-laboratorio.md) y [captura NETCONF](documentacion/operacion/captura-netconf-laboratorio.md).
 
 ## Cliente web local
 
