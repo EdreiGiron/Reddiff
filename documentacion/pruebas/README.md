@@ -17,4 +17,6 @@ El flujo Syslog se verifica en dos niveles: las pruebas unitarias comprueban UTF
 
 La consulta de auditoría se verifica mediante integración para confirmar paginación, ausencia de secretos, validación de filtros y autorización exclusiva del administrador. Las pruebas del cliente comprueban la presentación de acciones generadas por usuarios o procesos del sistema y la diferenciación visual entre resultados exitosos y fallidos.
 
+La puerta de calidad de GitHub repite la restauración, compilación, pruebas y formato sin utilizar secretos ni contactar dispositivos. Su alcance y operación se describen en [integración continua](integracion-continua.md).
+
 Cada requisito funcional deberá relacionarse con al menos un criterio de aceptación y una evidencia de prueba.

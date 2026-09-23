@@ -1,8 +1,12 @@
 # RedDiff
 
+[![Validación continua](https://github.com/EdreiGiron/Reddiff/actions/workflows/validacion-continua.yml/badge.svg)](https://github.com/EdreiGiron/Reddiff/actions/workflows/validacion-continua.yml)
+
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
 > Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario, carga controlada, captura SSH y NETCONF, recepción Syslog, comparación diferencial, líneas base y verificación de cumplimiento implementados. La solución aún no debe utilizarse en producción.
+
+Cada cambio enviado a `main` se valida en GitHub mediante trabajos independientes para el servidor .NET y el cliente Angular. Consulte [integración continua](documentacion/pruebas/integracion-continua.md).
 
 ## Tecnologías principales
 
