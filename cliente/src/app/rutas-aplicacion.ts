@@ -64,6 +64,15 @@ export const rutasAplicacion: Routes = [
           import('./modulos/usuarios/pagina-usuarios').then((modulo) => modulo.PaginaUsuarios),
         title: 'RedDiff | Usuarios',
       },
+      {
+        path: 'auditorias',
+        canActivate: [guardianAdministrador],
+        loadComponent: () =>
+          import('./modulos/auditorias/pagina-auditorias').then(
+            (modulo) => modulo.PaginaAuditorias,
+          ),
+        title: 'RedDiff | Bitácora de auditoría',
+      },
     ],
   },
   {

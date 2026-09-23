@@ -101,6 +101,8 @@ La captura remota mediante SSH o NETCONF comprueba autorización, acceso protegi
 
 La recepción Syslog permanece deshabilitada hasta configurarla explícitamente. Un datagrama aceptado debe proceder de la IP de un dispositivo autorizado, se limita y sanea antes de calcular su huella, y puede originar una sola captura mediante el protocolo de lectura ya configurado. Consulte [eventos Syslog en laboratorio](documentacion/operacion/eventos-syslog-laboratorio.md).
 
+El administrador puede consultar una bitácora paginada de accesos y operaciones desde la pantalla **Auditoría**. La respuesta conserva identificadores y resultados, pero excluye configuraciones completas, contraseñas y secretos. Consulte [bitácora de auditoría](documentacion/api/auditorias.md).
+
 ## Cliente web local
 
 Con la API activa en `http://localhost:5088`, inicie Angular en otra terminal:

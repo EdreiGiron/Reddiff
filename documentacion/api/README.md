@@ -16,4 +16,6 @@ La administración de líneas base y la verificación persistida de versiones se
 
 La recepción deduplicada y la consulta del historial se describen en [eventos de cambio](eventos.md).
 
+La consulta administrativa, paginada y sin contenido sensible se describe en [bitácora de auditoría](auditorias.md).
+
 El cliente consume rutas relativas bajo `/api`. Durante el desarrollo, Angular las dirige a `http://localhost:5088` mediante `cliente/proxy.conf.json`; esta configuración no forma parte de la compilación de producción.

@@ -1,0 +1,309 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  width: min(100%, 82rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2.5rem);
+}
+
+.encabezado {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.sobrelinea {
+  margin: 0 0 0.4rem;
+  color: #167c75;
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  color: #123b50;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.025em;
+}
+
+.encabezado p:last-child {
+  margin: 0.7rem 0 0;
+  color: #637781;
+}
+
+.indicador-total {
+  display: grid;
+  min-width: 11rem;
+  padding: 0.85rem 1rem;
+  background: #ffffff;
+  border: 1px solid #d7e1e5;
+  border-radius: 0.7rem;
+}
+
+.indicador-total span,
+small {
+  color: #71828a;
+  font-size: 0.75rem;
+}
+
+.indicador-total strong {
+  margin-top: 0.15rem;
+  color: #123b50;
+  font-size: 1.4rem;
+}
+
+.filtros {
+  display: grid;
+  margin-top: 2rem;
+  padding: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  background: #ffffff;
+  border: 1px solid #d7e1e5;
+  border-radius: 0.8rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  color: #38525f;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.65rem;
+  color: #193e50;
+  background: #ffffff;
+  border: 1px solid #bacbd2;
+  border-radius: 0.5rem;
+  font: inherit;
+  font-weight: 500;
+}
+
+input:focus,
+select:focus {
+  border-color: #147f77;
+  outline: 3px solid rgba(20, 127, 119, 0.14);
+}
+
+.filtros__acciones {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.boton,
+.paginacion button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.boton--primario {
+  color: #ffffff;
+  background: #147f77;
+  border-color: #147f77;
+}
+
+.boton--secundario,
+.paginacion button {
+  color: #304b58;
+  background: #ffffff;
+  border-color: #b9c9d0;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.alerta {
+  display: flex;
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
+  align-items: center;
+  justify-content: space-between;
+  color: #8a2832;
+  background: #fff0f1;
+  border: 1px solid #efc2c6;
+  border-radius: 0.55rem;
+}
+
+.alerta button {
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-weight: 750;
+  text-decoration: underline;
+}
+
+.panel-tabla {
+  min-height: 18rem;
+  margin-top: 1rem;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #d7e1e5;
+  border-radius: 0.8rem;
+  box-shadow: 0 0.45rem 1.3rem rgba(18, 59, 78, 0.05);
+}
+
+.tabla-desplazable {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.85rem 0.95rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: #647781;
+  background: #f7f9fa;
+  border-bottom: 1px solid #dce4e7;
+  font-size: 0.69rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+td {
+  color: #3c5561;
+  border-bottom: 1px solid #e5ebed;
+  font-size: 0.82rem;
+}
+
+td strong,
+td small {
+  display: block;
+}
+
+code {
+  color: #17495d;
+  font-size: 0.78rem;
+}
+
+.detalle {
+  min-width: 18rem;
+  max-width: 31rem;
+  overflow-wrap: anywhere;
+}
+
+.estado {
+  display: inline-flex;
+  padding: 0.25rem 0.5rem;
+  color: #176047;
+  background: #e3f5ee;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.estado[data-estado='Fallido'] {
+  color: #942d36;
+  background: #fee9eb;
+}
+
+.paginacion {
+  display: flex;
+  padding: 0.85rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #5d727c;
+  border-top: 1px solid #e0e8eb;
+  font-size: 0.78rem;
+}
+
+.paginacion div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.estado-vacio {
+  display: grid;
+  min-height: 18rem;
+  place-content: center;
+  justify-items: center;
+  color: #657983;
+  text-align: center;
+}
+
+.estado-vacio p {
+  margin: 0.35rem 0 0;
+}
+
+.cargador {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 3px solid #cddcde;
+  border-top-color: #147f77;
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+.nota-seguridad {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  color: #355867;
+  background: #edf6f7;
+  border-left: 3px solid #2b8d9b;
+  border-radius: 0.35rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 58rem) {
+  .filtros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 40rem) {
+  .encabezado,
+  .paginacion {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .filtros__acciones,
+  .paginacion div {
+    justify-content: stretch;
+  }
+
+  .filtros__acciones > *,
+  .paginacion button {
+    flex: 1;
+  }
+}

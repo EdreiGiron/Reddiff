@@ -1,0 +1,156 @@
+<section class="pagina" aria-labelledby="titulo-auditorias">
+  <header class="encabezado">
+    <div>
+      <p class="sobrelinea">Trazabilidad administrativa</p>
+      <h1 id="titulo-auditorias">Bitácora de auditoría</h1>
+      <p>Consulta quién realizó cada operación, cuándo ocurrió y cuál fue su resultado.</p>
+    </div>
+    <div class="indicador-total" aria-label="Total de registros encontrados">
+      <span>Registros encontrados</span>
+      <strong>{{ resultado().totalRegistros }}</strong>
+    </div>
+  </header>
+
+  <form class="filtros" [formGroup]="formulario" (ngSubmit)="aplicarFiltros()">
+    <label>
+      Usuario
+      <select formControlName="usuarioId">
+        <option value="">Todos</option>
+        @for (usuario of catalogoFiltros().usuarios; track usuario.id) {
+          <option [value]="usuario.id">{{ usuario.nombreUsuario }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Acción
+      <select formControlName="accion">
+        <option value="">Todas</option>
+        @for (accion of catalogoFiltros().acciones; track accion) {
+          <option [value]="accion">{{ formatearEtiqueta(accion) }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Entidad
+      <select formControlName="entidad">
+        <option value="">Todas</option>
+        @for (entidad of catalogoFiltros().entidades; track entidad) {
+          <option [value]="entidad">{{ formatearEtiqueta(entidad) }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Estado
+      <select formControlName="estado">
+        <option value="">Todos</option>
+        <option value="Exitoso">Exitoso</option>
+        <option value="Fallido">Fallido</option>
+      </select>
+    </label>
+    <label>
+      Desde
+      <input type="date" formControlName="desde" />
+    </label>
+    <label>
+      Hasta
+      <input type="date" formControlName="hasta" />
+    </label>
+    <div class="filtros__acciones">
+      <button class="boton boton--secundario" type="button" (click)="limpiarFiltros()">
+        Limpiar
+      </button>
+      <button class="boton boton--primario" type="submit" [disabled]="cargando()">
+        Aplicar filtros
+      </button>
+    </div>
+  </form>
+
+  @if (mensajeError()) {
+    <div class="alerta" role="alert">
+      <span>{{ mensajeError() }}</span>
+      <button type="button" (click)="reintentar()">Reintentar</button>
+    </div>
+  }
+
+  <div class="panel-tabla">
+    @if (cargando()) {
+      <div class="estado-vacio" role="status">
+        <span class="cargador" aria-hidden="true"></span>
+        <p>Consultando auditoría…</p>
+      </div>
+    } @else if (resultado().registros.length) {
+      <div class="tabla-desplazable">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              <th scope="col">Usuario</th>
+              <th scope="col">Acción</th>
+              <th scope="col">Entidad</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (registro of resultado().registros; track registro.id) {
+              <tr>
+                <td data-label="Fecha">
+                  <strong>{{ registro.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</strong>
+                  <small>#{{ registro.id }}</small>
+                </td>
+                <td data-label="Usuario">
+                  {{ registro.nombreUsuario ?? 'Proceso del sistema' }}
+                  @if (registro.usuarioId) {
+                    <small>ID {{ registro.usuarioId }}</small>
+                  }
+                </td>
+                <td data-label="Acción">
+                  <code>{{ registro.accion }}</code>
+                </td>
+                <td data-label="Entidad">
+                  {{ registro.entidad }}
+                  @if (registro.entidadId) {
+                    <small>ID {{ registro.entidadId }}</small>
+                  }
+                </td>
+                <td data-label="Estado">
+                  <span class="estado" [attr.data-estado]="registro.estado">
+                    {{ registro.estado }}
+                  </span>
+                </td>
+                <td data-label="Detalle" class="detalle">
+                  {{ registro.detalle ?? 'Sin detalle' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="paginacion" aria-label="Paginación de auditoría">
+        <span>
+          Página {{ resultado().pagina }} de {{ resultado().totalPaginas }} ·
+          {{ resultado().totalRegistros }} registros
+        </span>
+        <div>
+          <button type="button" (click)="cambiarPagina(-1)" [disabled]="!puedeRetroceder()">
+            Anterior
+          </button>
+          <button type="button" (click)="cambiarPagina(1)" [disabled]="!puedeAvanzar()">
+            Siguiente
+          </button>
+        </div>
+      </footer>
+    } @else if (!mensajeError()) {
+      <div class="estado-vacio">
+        <strong>No hay registros para los filtros seleccionados</strong>
+        <p>Modifica o limpia los filtros para ampliar la consulta.</p>
+      </div>
+    }
+  </div>
+
+  <aside class="nota-seguridad">
+    La bitácora conserva identificadores y resultados. Las configuraciones completas, contraseñas y
+    secretos permanecen fuera de este registro.
+  </aside>
+</section>

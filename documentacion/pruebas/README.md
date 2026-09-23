@@ -15,4 +15,6 @@ El adaptador SSH conserva sus pruebas de identidad del host separadas de la red:
 
 El flujo Syslog se verifica en dos niveles: las pruebas unitarias comprueban UTF-8 estricto, límites, normalización, saneamiento y huellas; las pruebas de integración confirman autorización por IP, deduplicación de eventos y supresión de versiones cuando dos capturas consecutivas tienen la misma huella. La interoperabilidad UDP con IOS se valida únicamente en el laboratorio autorizado.
 
+La consulta de auditoría se verifica mediante integración para confirmar paginación, ausencia de secretos, validación de filtros y autorización exclusiva del administrador. Las pruebas del cliente comprueban la presentación de acciones generadas por usuarios o procesos del sistema y la diferenciación visual entre resultados exitosos y fallidos.
+
 Cada requisito funcional deberá relacionarse con al menos un criterio de aceptación y una evidencia de prueba.
