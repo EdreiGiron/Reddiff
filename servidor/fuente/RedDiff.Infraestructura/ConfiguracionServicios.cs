@@ -27,9 +27,20 @@ public static class ConfiguracionServicios
         ArgumentNullException.ThrowIfNull(configuracion);
         ArgumentNullException.ThrowIfNull(ambiente);
 
-        servicios
+        IDataProtectionBuilder proteccionDatos = servicios
             .AddDataProtection()
             .SetApplicationName("RedDiff");
+
+        string? directorioClaves = configuracion["Seguridad:DirectorioClavesProteccion"];
+        if (!string.IsNullOrWhiteSpace(directorioClaves))
+        {
+            proteccionDatos.PersistKeysToFileSystem(new DirectoryInfo(directorioClaves));
+        }
+        else if (!ambiente.IsDevelopment())
+        {
+            throw new InvalidOperationException(
+                "Fuera de desarrollo debe configurar Seguridad:DirectorioClavesProteccion.");
+        }
 
         servicios
             .AddOptions<OpcionesBaseDatos>()
@@ -41,14 +52,17 @@ public static class ConfiguracionServicios
                 opciones => opciones.Puerto is > 0 and <= 65535,
                 "BaseDatos:Puerto debe estar entre 1 y 65535.")
             .Validate(
+                opciones => opciones.VersionMayorServidor is >= 15 and <= 18,
+                "BaseDatos:VersionMayorServidor debe estar entre 15 y 18.")
+            .Validate(
                 opciones => !string.IsNullOrWhiteSpace(opciones.Nombre),
                 "Debe configurar BaseDatos:Nombre.")
             .Validate(
                 opciones => !string.IsNullOrWhiteSpace(opciones.Usuario),
                 "Debe configurar BaseDatos:Usuario.")
             .Validate(
-                opciones => !string.IsNullOrWhiteSpace(opciones.Contrasena),
-                "Debe suministrar BaseDatos:Contrasena mediante una fuente segura.")
+                opciones => opciones.TieneContrasenaDisponible(),
+                "Debe suministrar BaseDatos:Contrasena o BaseDatos:ArchivoContrasena mediante una fuente segura.")
             .Validate(
                 opciones => opciones.TiempoEsperaSegundos is > 0 and <= 60,
                 "BaseDatos:TiempoEsperaSegundos debe estar entre 1 y 60.")
@@ -56,8 +70,14 @@ public static class ConfiguracionServicios
                 opciones => opciones.TiempoComandoSegundos is > 0 and <= 300,
                 "BaseDatos:TiempoComandoSegundos debe estar entre 1 y 300.")
             .Validate(
-                opciones => ambiente.IsDevelopment() || opciones.ModoSsl == Npgsql.SslMode.VerifyFull,
-                "Fuera de desarrollo, BaseDatos:ModoSsl debe ser VerifyFull.")
+                opciones => ambiente.IsDevelopment()
+                    || opciones.TieneTransporteSeguroParaProduccion(),
+                "Fuera de desarrollo debe usar VerifyFull o habilitar explícitamente una conexión local sin TLS hacia localhost.")
+            .Validate(
+                opciones => opciones.ModoSsl != Npgsql.SslMode.VerifyFull
+                    || (!string.IsNullOrWhiteSpace(opciones.CertificadoRaiz)
+                        && File.Exists(opciones.CertificadoRaiz)),
+                "Con BaseDatos:ModoSsl=VerifyFull debe configurar un BaseDatos:CertificadoRaiz existente.")
             .ValidateOnStart();
 
         servicios.AddDbContext<ContextoRedDiff>((proveedorServicios, opcionesContexto) =>
@@ -70,7 +90,9 @@ public static class ConfiguracionServicios
                 opcionesBaseDatos.ConstruirCadenaConexion(),
                 opcionesPostgresql =>
                 {
-                    opcionesPostgresql.SetPostgresVersion(18, 0);
+                    opcionesPostgresql.SetPostgresVersion(
+                        opcionesBaseDatos.VersionMayorServidor,
+                        0);
                     opcionesPostgresql.MigrationsAssembly(
                         typeof(MarcadorEnsambladoInfraestructura).Assembly.GetName().Name!);
                     opcionesPostgresql.MigrationsHistoryTable(

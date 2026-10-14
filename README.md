@@ -4,7 +4,7 @@
 
 Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
 
-> Estado actual: cimentación técnica, modelo persistente, identidad, acceso web, inventario, carga controlada, captura SSH y NETCONF, recepción Syslog, comparación diferencial, líneas base y verificación de cumplimiento implementados. La solución aún no debe utilizarse en producción.
+> Estado actual: funcionalidad prevista implementada y validada mediante pruebas automatizadas. El repositorio incluye despliegues reproducibles para Linux con Docker Compose y para Windows de forma nativa; cada ambiente definitivo debe completar su validación operativa, de red, respaldo y recuperación antes de autorizar el uso productivo.
 
 Cada cambio enviado a `main` se valida en GitHub mediante trabajos independientes para el servidor .NET y el cliente Angular. Consulte [integración continua](documentacion/pruebas/integracion-continua.md).
 
@@ -14,6 +14,7 @@ Cada cambio enviado a `main` se valida en GitHub mediante trabajos independiente
 - Cliente: Angular 22, TypeScript y Vitest.
 - Base de datos: PostgreSQL.
 - Contenedores: Docker y Docker Compose.
+- Windows: IIS, ASP.NET Core Hosting Bundle y PostgreSQL como servicio.
 - Pruebas del servidor: xUnit.
 
 Las versiones exactas se fijan mediante `global.json`, `Directory.Packages.props`, `package-lock.json`, el manifiesto local de herramientas .NET y las imágenes de los contenedores.
@@ -73,6 +74,31 @@ Para detener los contenedores conservando los datos:
 ```
 
 Consulte [documentacion/operacion/base-datos-local.md](documentacion/operacion/base-datos-local.md) para conocer el procedimiento completo.
+
+## Despliegue productivo en Linux
+
+El perfil productivo construye y ejecuta Angular, ASP.NET Core y PostgreSQL mediante Docker Compose. Mantiene HTTPS, TLS interno, secretos externos, migraciones controladas, verificaciones de salud y almacenamiento persistente para la base de datos y las claves criptográficas.
+
+```bash
+./automatizacion/bash/produccion/Preparar-Produccion.sh reddiff.labymed.local
+./automatizacion/bash/produccion/Desplegar-Produccion.sh
+./automatizacion/bash/produccion/Inicializar-Administrador-Produccion.sh
+./automatizacion/bash/produccion/Verificar-Produccion.sh
+```
+
+Consulte [producción con Docker Compose](documentacion/despliegue/produccion-docker-compose.md) antes de ejecutar estos comandos.
+
+## Despliegue productivo en Windows
+
+La variante nativa utiliza IIS, ASP.NET Core 10 y PostgreSQL instalado como servicio. El cliente Angular se incorpora a la publicación de la API, por lo que el servidor final no necesita Node.js, Visual Studio ni Docker.
+
+Genere el paquete instalable desde un equipo de compilación:
+
+```powershell
+.\automatizacion\powershell\produccion-windows\Crear-Paquete-Produccion-Windows.ps1
+```
+
+Después siga [producción nativa en Windows](documentacion/despliegue/produccion-windows-nativo.md). Windows Server 2016 utiliza PostgreSQL 15; Windows 11 y Windows Server 2022/2025 utilizan PostgreSQL 18.
 
 ## API local
 

@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Respaldos operativos locales
+respaldos/
+
 # User-specific files
 *.rsuser
 *.suo

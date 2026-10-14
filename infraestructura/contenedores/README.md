@@ -2,7 +2,7 @@
 
 ## Composición de desarrollo
 
-`compose.desarrollo.yml` incorpora inicialmente PostgreSQL. La API, el procesador y el cliente se agregarán cuando sus puntos de inicio, configuración y verificaciones de salud estén implementados.
+`compose.desarrollo.yml` mantiene PostgreSQL para el trabajo local. La composición completa de producción se encuentra en `produccion/compose.yml` e incorpora PostgreSQL, API y cliente web.
 
 Controles incluidos:
 
@@ -16,4 +16,8 @@ Controles incluidos:
 
 Los comandos operativos están documentados en [../../documentacion/operacion/base-datos-local.md](../../documentacion/operacion/base-datos-local.md).
 
-Las imágenes futuras deberán utilizar versiones fijadas, usuarios sin privilegios cuando sea posible, verificaciones de salud, contextos de construcción pequeños y secretos proporcionados fuera de Git.
+## Composición de producción
+
+La composición productiva incluye compilaciones multietapa, usuarios sin privilegios para la API y Nginx, comprobaciones de salud, redes separadas, TLS, volúmenes persistentes y secretos montados desde archivos excluidos de Git.
+
+El procedimiento obligatorio se encuentra en [producción con Docker Compose](../../documentacion/despliegue/produccion-docker-compose.md).

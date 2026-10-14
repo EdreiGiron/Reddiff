@@ -1,0 +1,261 @@
+name: reddiff-produccion
+
+x-entorno-api: &entorno-api
+  ASPNETCORE_ENVIRONMENT: Production
+  ASPNETCORE_HTTP_PORTS: 8080
+  BaseDatos__Servidor: base-datos
+  BaseDatos__Puerto: 5432
+  BaseDatos__VersionMayorServidor: 18
+  BaseDatos__Nombre: "${REDDIFF_BD_NOMBRE:-reddiff}"
+  BaseDatos__Usuario: "${REDDIFF_BD_USUARIO_APLICACION:-reddiff_app}"
+  BaseDatos__ArchivoContrasena: /run/secrets/postgresql_aplicacion_contrasena
+  BaseDatos__ModoSsl: VerifyFull
+  BaseDatos__CertificadoRaiz: /run/secrets/postgresql_ca_certificado
+  Seguridad__OrigenCliente: "${REDDIFF_ORIGEN_CLIENTE:?Debe definir REDDIFF_ORIGEN_CLIENTE}"
+  Seguridad__ConfiarProxyInverso: "true"
+  Seguridad__DirectorioClavesProteccion: /var/lib/reddiff/claves-proteccion
+  Seguridad__DuracionSesionMinutos: "${REDDIFF_DURACION_SESION_MINUTOS:-30}"
+  Seguridad__LimiteIntentosInicioSesionPorMinuto: "${REDDIFF_LIMITE_INICIO_SESION:-10}"
+  Eventos__Syslog__Habilitado: "${REDDIFF_SYSLOG_HABILITADO:-true}"
+  Eventos__Syslog__DireccionEscucha: 0.0.0.0
+  Eventos__Syslog__Puerto: 5514
+  AllowedHosts: "${REDDIFF_NOMBRE_HOST:?Debe definir REDDIFF_NOMBRE_HOST}"
+  TZ: "${REDDIFF_ZONA_HORARIA:-America/Guatemala}"
+
+x-seguridad-contenedor: &seguridad-contenedor
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+services:
+  preparar-volumenes:
+    image: alpine:3.22
+    restart: "no"
+    command:
+      - sh
+      - -ec
+      - |
+        chown -R 1654:1654 /var/lib/reddiff/claves-proteccion
+        chmod 0700 /var/lib/reddiff/claves-proteccion
+    volumes:
+      - claves-proteccion:/var/lib/reddiff/claves-proteccion
+    networks:
+      - red-datos
+
+  base-datos:
+    image: reddiff-base-datos:${REDDIFF_VERSION:-local}
+    build:
+      context: ../../..
+      dockerfile: infraestructura/contenedores/produccion/base-datos/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      POSTGRES_DB: "${REDDIFF_BD_NOMBRE:-reddiff}"
+      POSTGRES_USER: "${REDDIFF_BD_USUARIO_ADMIN:-reddiff_admin}"
+      REDDIFF_BD_USUARIO_APLICACION: "${REDDIFF_BD_USUARIO_APLICACION:-reddiff_app}"
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgresql_contrasena
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+      TZ: "${REDDIFF_ZONA_HORARIA:-America/Guatemala}"
+      PGTZ: "${REDDIFF_ZONA_HORARIA:-America/Guatemala}"
+    volumes:
+      - datos-postgresql:/var/lib/postgresql
+      - ../../base-datos/inicializacion/20-configurar-usuario-aplicacion.sh:/docker-entrypoint-initdb.d/20-configurar-usuario-aplicacion.sh:ro
+      - ../../base-datos/herramientas:/opt/reddiff/herramientas:ro
+    secrets:
+      - postgresql_contrasena
+      - postgresql_aplicacion_contrasena
+      - postgresql_ca_certificado
+      - postgresql_servidor_certificado
+      - postgresql_servidor_clave
+    networks:
+      - red-datos
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'pg_isready --host=127.0.0.1 --username="$${POSTGRES_USER}" --dbname="$${POSTGRES_DB}"'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    stop_grace_period: 30s
+    shm_size: 128mb
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+    labels:
+      com.reddiff.componente: base-datos
+      com.reddiff.entorno: produccion
+
+  migrador:
+    image: reddiff-api:${REDDIFF_VERSION:-local}
+    build:
+      context: ../../..
+      dockerfile: infraestructura/contenedores/produccion/api/Dockerfile
+    profiles:
+      - herramientas
+    restart: "no"
+    environment:
+      <<: *entorno-api
+      BaseDatos__Usuario: "${REDDIFF_BD_USUARIO_ADMIN:-reddiff_admin}"
+      BaseDatos__ArchivoContrasena: /run/secrets/postgresql_contrasena
+    command:
+      - --migrar-base-datos
+    volumes:
+      - claves-proteccion:/var/lib/reddiff/claves-proteccion
+    secrets:
+      - postgresql_contrasena
+      - postgresql_ca_certificado
+    networks:
+      - red-datos
+    depends_on:
+      preparar-volumenes:
+        condition: service_completed_successfully
+      base-datos:
+        condition: service_healthy
+    <<: *seguridad-contenedor
+
+  inicializador:
+    image: reddiff-api:${REDDIFF_VERSION:-local}
+    build:
+      context: ../../..
+      dockerfile: infraestructura/contenedores/produccion/api/Dockerfile
+    profiles:
+      - herramientas
+    restart: "no"
+    environment:
+      <<: *entorno-api
+      Seguridad__AdministradorInicial__NombreUsuario: "${REDDIFF_ADMINISTRADOR_INICIAL:-administrador.principal}"
+      Seguridad__AdministradorInicial__ArchivoContrasena: /run/secrets/administrador_inicial_contrasena
+    command:
+      - --inicializar-administrador
+    volumes:
+      - claves-proteccion:/var/lib/reddiff/claves-proteccion
+    secrets:
+      - postgresql_aplicacion_contrasena
+      - postgresql_ca_certificado
+      - administrador_inicial_contrasena
+    networks:
+      - red-datos
+    depends_on:
+      preparar-volumenes:
+        condition: service_completed_successfully
+      base-datos:
+        condition: service_healthy
+    <<: *seguridad-contenedor
+
+  api:
+    image: reddiff-api:${REDDIFF_VERSION:-local}
+    build:
+      context: ../../..
+      dockerfile: infraestructura/contenedores/produccion/api/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: *entorno-api
+    ports:
+      - "${REDDIFF_SYSLOG_PUERTO_PUBLICO:-514}:5514/udp"
+    volumes:
+      - claves-proteccion:/var/lib/reddiff/claves-proteccion
+    secrets:
+      - postgresql_aplicacion_contrasena
+      - postgresql_ca_certificado
+    networks:
+      - red-datos
+      - red-aplicacion
+    depends_on:
+      preparar-volumenes:
+        condition: service_completed_successfully
+      base-datos:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'curl --fail --silent --show-error --header "Host: $${AllowedHosts}" http://127.0.0.1:8080/salud/listo'
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+    labels:
+      com.reddiff.componente: api
+      com.reddiff.entorno: produccion
+    <<: *seguridad-contenedor
+
+  web:
+    image: reddiff-web:${REDDIFF_VERSION:-local}
+    build:
+      context: ../../..
+      dockerfile: infraestructura/contenedores/produccion/web/Dockerfile
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${REDDIFF_HTTPS_PUERTO:-443}:8443/tcp"
+    secrets:
+      - https_certificado
+      - https_clave
+    networks:
+      - red-aplicacion
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'wget --header="Host: ${REDDIFF_NOMBRE_HOST}" --no-check-certificate --quiet --spider https://127.0.0.1:8443/salud/vivo'
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+    labels:
+      com.reddiff.componente: web
+      com.reddiff.entorno: produccion
+    <<: *seguridad-contenedor
+
+networks:
+  red-datos:
+    driver: bridge
+    internal: true
+  red-aplicacion:
+    driver: bridge
+
+volumes:
+  datos-postgresql:
+  claves-proteccion:
+
+secrets:
+  postgresql_contrasena:
+    file: ../../../configuracion/secretos/produccion/postgresql_contrasena.txt
+  postgresql_aplicacion_contrasena:
+    file: ../../../configuracion/secretos/produccion/postgresql_aplicacion_contrasena.txt
+  postgresql_ca_certificado:
+    file: ../../../configuracion/secretos/produccion/autoridad_certificadora.crt
+  postgresql_servidor_certificado:
+    file: ../../../configuracion/secretos/produccion/postgresql_servidor.crt
+  postgresql_servidor_clave:
+    file: ../../../configuracion/secretos/produccion/postgresql_servidor.key
+  https_certificado:
+    file: ../../../configuracion/secretos/produccion/reddiff_https.crt
+  https_clave:
+    file: ../../../configuracion/secretos/produccion/reddiff_https.key
+  administrador_inicial_contrasena:
+    file: ../../../configuracion/secretos/produccion/administrador_inicial_contrasena.txt
