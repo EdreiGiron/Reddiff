@@ -20,8 +20,10 @@ La concurrencia cancela una ejecución anterior de la misma rama cuando llega un
 | --------------- | ----------------------------------------------------------------------- |
 | Servidor .NET   | Restauración, compilación `Release` y todas las pruebas de la solución. |
 | Cliente Angular | `npm ci`, Prettier, pruebas Vitest y compilación de producción.         |
+| Imágenes Docker | Construcción de PostgreSQL, API y web después de superar las pruebas.   |
+| Paquete Windows | Publicación `win-x64`, Angular incorporado y artefacto descargable durante 14 días. |
 
-Ambos trabajos se ejecutan en paralelo y deben finalizar correctamente. Las pruebas de API usan sus dobles controlados y una base de datos en memoria; el flujo no abre conexiones SSH o NETCONF, no escucha Syslog y no necesita credenciales de PostgreSQL.
+Servidor y cliente se ejecutan en paralelo. Las imágenes y el paquete Windows se construyen únicamente cuando ambos trabajos terminan correctamente. Las pruebas de API usan sus dobles controlados y una base de datos en memoria; el flujo no abre conexiones SSH o NETCONF, no escucha Syslog y no necesita credenciales de PostgreSQL.
 
 ## Seguridad y reproducibilidad
 
@@ -51,8 +53,8 @@ npm run build
 Set-Location ..
 ```
 
-Un resultado local correcto no garantiza por sí solo que GitHub finalice correctamente: después del `push` también debe comprobarse que los trabajos **Servidor .NET** y **Cliente Angular** aparezcan en verde.
+Un resultado local correcto no garantiza por sí solo que GitHub finalice correctamente: después del `push` también debe comprobarse que **Servidor .NET**, **Cliente Angular**, **Imágenes Docker** y **Paquete Windows** aparezcan en verde.
 
 ## Protección recomendada de `main`
 
-Después de validar el primer flujo en GitHub, puede configurarse una regla de protección para requerir ambos trabajos antes de integrar solicitudes de incorporación. Esta regla se configura en GitHub y no debe activarse hasta confirmar los nombres exactos que aparecen en la primera ejecución.
+Después de validar el primer flujo en GitHub, puede configurarse una regla de protección para requerir los cuatro trabajos antes de integrar solicitudes de incorporación. Esta regla se configura en GitHub y no debe activarse hasta confirmar los nombres exactos que aparecen en la primera ejecución.

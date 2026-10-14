@@ -1,0 +1,49 @@
+\set ON_ERROR_STOP on
+\getenv usuario_aplicacion REDDIFF_BD_USUARIO_APLICACION
+\getenv contrasena_aplicacion REDDIFF_BD_CONTRASENA_APLICACION
+
+SET password_encryption = 'scram-sha-256';
+
+SELECT format(
+    'ALTER ROLE %I WITH LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 20',
+    :'usuario_aplicacion',
+    :'contrasena_aplicacion')
+\gexec
+
+CREATE SCHEMA IF NOT EXISTS reddiff;
+REVOKE ALL ON SCHEMA reddiff FROM PUBLIC;
+
+SELECT format(
+    'GRANT CONNECT ON DATABASE %I TO %I',
+    current_database(),
+    :'usuario_aplicacion')
+\gexec
+
+SELECT format('GRANT USAGE ON SCHEMA reddiff TO %I', :'usuario_aplicacion')
+\gexec
+
+SELECT format(
+    'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA reddiff TO %I',
+    :'usuario_aplicacion')
+\gexec
+
+SELECT format(
+    'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA reddiff TO %I',
+    :'usuario_aplicacion')
+\gexec
+
+SELECT format(
+    'ALTER DEFAULT PRIVILEGES IN SCHEMA reddiff GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I',
+    :'usuario_aplicacion')
+\gexec
+
+SELECT format(
+    'ALTER DEFAULT PRIVILEGES IN SCHEMA reddiff GRANT USAGE, SELECT ON SEQUENCES TO %I',
+    :'usuario_aplicacion')
+\gexec
+
+SELECT format(
+    'REVOKE ALL PRIVILEGES ON TABLE reddiff.__historial_migraciones FROM %I',
+    :'usuario_aplicacion')
+WHERE to_regclass('reddiff.__historial_migraciones') IS NOT NULL
+\gexec

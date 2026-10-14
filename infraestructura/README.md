@@ -9,5 +9,6 @@ Recursos necesarios para ejecutar y desplegar el sistema sin mezclar detalles op
 | `certificados` | Instrucciones y plantillas; nunca llaves privadas versionadas. |
 | `proxy-inverso` | Enrutamiento, TLS y cabeceras de seguridad. |
 | `observabilidad` | Logs, métricas, trazas y alertas. |
+| `windows` | Instalación, actualización, verificación y respaldo nativos en Windows. |
 
 No se almacenan secretos, datos productivos ni configuraciones reales de dispositivos en esta carpeta.

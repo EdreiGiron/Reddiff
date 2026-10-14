@@ -10,7 +10,7 @@ La API necesita acceder a PostgreSQL sin acoplar el dominio al motor de base de 
 ## Decisión
 
 - Entity Framework Core se utilizará únicamente desde `RedDiff.Infraestructura`.
-- Npgsql será el proveedor de PostgreSQL y se configurará para PostgreSQL 18.6.
+- Npgsql será el proveedor de PostgreSQL. La versión mayor se declara en la configuración: 18 para contenedores y plataformas Windows actuales, o 15 para la compatibilidad temporal con Windows Server 2016.
 - Las versiones de paquetes .NET se administrarán centralmente en `Directory.Packages.props`.
 - Las migraciones se almacenarán en `RedDiff.Infraestructura` y utilizarán el esquema `reddiff`.
 - La cuenta administradora se reservará para aprovisionamiento y migraciones.
