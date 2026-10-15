@@ -4,11 +4,11 @@ Recursos necesarios para ejecutar y desplegar el sistema sin mezclar detalles op
 
 | Carpeta | Finalidad |
 | --- | --- |
-| `contenedores` | Imágenes y composición de servicios. |
+| `contenedores` | Imágenes y composición de servicios para Windows 11 o Linux. |
 | `base-datos` | Inicialización y recursos operativos de PostgreSQL. |
 | `certificados` | Instrucciones y plantillas; nunca llaves privadas versionadas. |
 | `proxy-inverso` | Enrutamiento, TLS y cabeceras de seguridad. |
 | `observabilidad` | Logs, métricas, trazas y alertas. |
-| `windows` | Instalación, actualización, verificación y respaldo nativos en Windows. |
+| `windows` | Variante nativa de contingencia para Windows. |
 
 No se almacenan secretos, datos productivos ni configuraciones reales de dispositivos en esta carpeta.

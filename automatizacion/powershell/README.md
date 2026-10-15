@@ -1,8 +1,8 @@
 # Automatización con PowerShell
 
-Scripts destinados al desarrollo y despliegue nativo en Windows. Deben ser compatibles con PowerShell 5.1 mientras no se documente expresamente un requisito superior.
+Scripts destinados al desarrollo y a los despliegues de RedDiff administrados desde Windows. Deben ser compatibles con PowerShell 5.1 mientras no se documente expresamente un requisito superior.
 
-Los archivos se guardan como UTF-8 con BOM porque Windows PowerShell 5.1 necesita esa marca para interpretar correctamente los caracteres no ASCII.
+Los scripts compatibles con Windows PowerShell 5.1 usan texto ASCII o UTF-8 con BOM cuando contienen caracteres no ASCII. Git normaliza sus finales de linea como CRLF al descargarlos en Windows.
 
 | Script                                     | Finalidad                                                                                                        |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
@@ -20,3 +20,18 @@ Los archivos se guardan como UTF-8 con BOM porque Windows PowerShell 5.1 necesit
 | `Inicializar-Administrador.ps1`            | Crear localmente los roles funcionales y la primera cuenta administrativa, sin contraseña predeterminada.        |
 | `Rotar-CredencialesDesarrollo.ps1`         | Rotar las credenciales de PostgreSQL y verificar ambas identidades antes de retirar respaldos.                   |
 | `Obtener-HuellaHostSsh.ps1`                | Consultar las claves públicas SSH y calcular candidatos SHA-256 hexadecimales para verificación independiente.   |
+
+## Produccion con Docker Compose en Windows 11
+
+| Script | Finalidad |
+| --- | --- |
+| `produccion-docker/Verificar-RequisitosWindows.ps1` | Comprobar Windows 11, WSL 2, Docker Desktop, Compose y el motor Linux. |
+| `produccion-docker/Preparar-Produccion.ps1` | Crear configuracion, secretos y certificados, y opcionalmente preparar el host Windows. |
+| `produccion-docker/Configurar-HostWindows.ps1` | Instalar la autoridad, configurar firewall y resolucion local. |
+| `produccion-docker/Desplegar-Produccion.ps1` | Construir, migrar e iniciar la composicion productiva. |
+| `produccion-docker/Inicializar-Administrador.ps1` | Crear la primera cuenta sin conservar su contrasena temporal. |
+| `produccion-docker/Verificar-Produccion.ps1` | Comprobar salud, HTTPS, publicacion Syslog y aislamiento de PostgreSQL. |
+| `produccion-docker/Respaldar-Produccion.ps1` | Respaldar base de datos, claves e integridad. |
+| `produccion-docker/Restaurar-Produccion.ps1` | Restaurar un respaldo verificado mediante confirmacion explicita. |
+| `produccion-docker/Actualizar-Produccion.ps1` | Respaldar, actualizar por avance rapido, desplegar y verificar. |
+| `produccion-docker/Detener-Produccion.ps1` | Detener contenedores sin eliminar volumenes. |

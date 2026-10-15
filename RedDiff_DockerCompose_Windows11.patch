@@ -1,0 +1,1631 @@
+diff --git a/.github/workflows/validacion-continua.yml b/.github/workflows/validacion-continua.yml
+index 6404a8e..0d0f211 100644
+--- a/.github/workflows/validacion-continua.yml
++++ b/.github/workflows/validacion-continua.yml
+@@ -78,7 +78,7 @@ jobs:
+         run: npm run build
+ 
+   contenedores:
+-    name: Imágenes Docker
++    name: Imágenes y Docker Compose
+     needs:
+       - servidor
+       - cliente
+@@ -90,6 +90,38 @@ jobs:
+         with:
+           persist-credentials: false
+ 
++      - name: Preparar archivos ficticios para validar Compose
++        shell: bash
++        run: |
++          cp configuracion/entornos/produccion.env.example configuracion/entornos/produccion.env
++          mkdir -p configuracion/secretos/produccion
++          for archivo in \
++            postgresql_contrasena.txt \
++            postgresql_aplicacion_contrasena.txt \
++            administrador_inicial_contrasena.txt \
++            autoridad_certificadora.crt \
++            postgresql_servidor.crt \
++            postgresql_servidor.key \
++            reddiff_https.crt \
++            reddiff_https.key
++          do
++            printf 'solo-validacion-ci' > "configuracion/secretos/produccion/$archivo"
++          done
++
++      - name: Validar Docker Compose productivo
++        run: >-
++          docker compose
++          --env-file configuracion/entornos/produccion.env
++          --file infraestructura/contenedores/produccion/compose.yml
++          config --quiet
++
++      - name: Construir herramienta de certificados
++        run: >-
++          docker build
++          --file infraestructura/contenedores/produccion/certificados/Dockerfile
++          --tag reddiff-certificados:validacion
++          .
++
+       - name: Construir imagen de PostgreSQL
+         run: >-
+           docker build
+@@ -136,6 +168,28 @@ jobs:
+           cache: npm
+           cache-dependency-path: cliente/package-lock.json
+ 
++      - name: Validar sintaxis de scripts PowerShell
++        shell: pwsh
++        run: |
++          $errores = [System.Collections.Generic.List[string]]::new()
++          Get-ChildItem ./automatizacion/powershell -Filter *.ps1 -Recurse | ForEach-Object {
++            $tokens = $null
++            $erroresArchivo = $null
++            [System.Management.Automation.Language.Parser]::ParseFile(
++              $_.FullName,
++              [ref] $tokens,
++              [ref] $erroresArchivo
++            ) | Out-Null
++
++            foreach ($errorArchivo in $erroresArchivo) {
++              $errores.Add("$($_.FullName): $($errorArchivo.Message)")
++            }
++          }
++
++          if ($errores.Count -gt 0) {
++            throw ($errores -join [Environment]::NewLine)
++          }
++
+       - name: Generar paquete instalable
+         shell: pwsh
+         run: >-
+diff --git a/README.md b/README.md
+index e4458e2..2641a45 100644
+--- a/README.md
++++ b/README.md
+@@ -4,7 +4,7 @@
+ 
+ Sistema web para capturar, versionar, comparar y auditar configuraciones de dispositivos de red Cisco. Su finalidad es facilitar la trazabilidad de cambios y apoyar la recuperación de la red ante incidentes o configuraciones incorrectas.
+ 
+-> Estado actual: funcionalidad prevista implementada y validada mediante pruebas automatizadas. El repositorio incluye despliegues reproducibles para Linux con Docker Compose y para Windows de forma nativa; cada ambiente definitivo debe completar su validación operativa, de red, respaldo y recuperación antes de autorizar el uso productivo.
++> Estado actual: funcionalidad prevista implementada y validada mediante pruebas automatizadas. El despliegue objetivo utiliza Docker Compose sobre Windows 11; cada ambiente definitivo debe completar su validación operativa, de red, respaldo y recuperación antes de autorizar el uso productivo.
+ 
+ Cada cambio enviado a `main` se valida en GitHub mediante trabajos independientes para el servidor .NET y el cliente Angular. Consulte [integración continua](documentacion/pruebas/integracion-continua.md).
+ 
+@@ -14,7 +14,7 @@ Cada cambio enviado a `main` se valida en GitHub mediante trabajos independiente
+ - Cliente: Angular 22, TypeScript y Vitest.
+ - Base de datos: PostgreSQL.
+ - Contenedores: Docker y Docker Compose.
+-- Windows: IIS, ASP.NET Core Hosting Bundle y PostgreSQL como servicio.
++- Plataforma objetivo: Windows 11, Docker Desktop, WSL 2 y Docker Compose.
+ - Pruebas del servidor: xUnit.
+ 
+ Las versiones exactas se fijan mediante `global.json`, `Directory.Packages.props`, `package-lock.json`, el manifiesto local de herramientas .NET y las imágenes de los contenedores.
+@@ -75,7 +75,28 @@ Para detener los contenedores conservando los datos:
+ 
+ Consulte [documentacion/operacion/base-datos-local.md](documentacion/operacion/base-datos-local.md) para conocer el procedimiento completo.
+ 
+-## Despliegue productivo en Linux
++## Despliegue productivo en Windows 11 con Docker Compose
++
++Windows ejecuta la composicion completa mediante Docker Desktop en modo Linux containers. No necesita IIS, PostgreSQL, .NET, Node.js, Nginx ni OpenSSL instalados directamente.
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Verificar-RequisitosWindows.ps1
++
++.\automatizacion\powershell\produccion-docker\Preparar-Produccion.ps1 `
++    -NombreHost 'reddiff.labymed.local' `
++    -OrigenWeb '192.168.200.0/24' `
++    -OrigenSyslog '192.168.200.0/24' `
++    -ConfigurarHostWindows `
++    -AgregarResolucionLocal
++
++.\automatizacion\powershell\produccion-docker\Desplegar-Produccion.ps1
++.\automatizacion\powershell\produccion-docker\Inicializar-Administrador.ps1
++.\automatizacion\powershell\produccion-docker\Verificar-Produccion.ps1
++```
++
++Consulte [Docker Compose en Windows 11](documentacion/despliegue/produccion-docker-compose-windows.md) antes de ejecutar el procedimiento.
++
++## Despliegue productivo alternativo en Linux
+ 
+ El perfil productivo construye y ejecuta Angular, ASP.NET Core y PostgreSQL mediante Docker Compose. Mantiene HTTPS, TLS interno, secretos externos, migraciones controladas, verificaciones de salud y almacenamiento persistente para la base de datos y las claves criptográficas.
+ 
+@@ -88,9 +109,9 @@ El perfil productivo construye y ejecuta Angular, ASP.NET Core y PostgreSQL medi
+ 
+ Consulte [producción con Docker Compose](documentacion/despliegue/produccion-docker-compose.md) antes de ejecutar estos comandos.
+ 
+-## Despliegue productivo en Windows
++## Despliegue nativo alternativo en Windows
+ 
+-La variante nativa utiliza IIS, ASP.NET Core 10 y PostgreSQL instalado como servicio. El cliente Angular se incorpora a la publicación de la API, por lo que el servidor final no necesita Node.js, Visual Studio ni Docker.
++La variante nativa con IIS y PostgreSQL local se conserva unicamente como alternativa de contingencia. No forma parte del despliegue objetivo de LABYMED S.A.
+ 
+ Genere el paquete instalable desde un equipo de compilación:
+ 
+diff --git a/automatizacion/powershell/README.md b/automatizacion/powershell/README.md
+index f970641..6ab4526 100644
+--- a/automatizacion/powershell/README.md
++++ b/automatizacion/powershell/README.md
+@@ -1,8 +1,8 @@
+ # Automatización con PowerShell
+ 
+-Scripts destinados al desarrollo y despliegue nativo en Windows. Deben ser compatibles con PowerShell 5.1 mientras no se documente expresamente un requisito superior.
++Scripts destinados al desarrollo y a los despliegues de RedDiff administrados desde Windows. Deben ser compatibles con PowerShell 5.1 mientras no se documente expresamente un requisito superior.
+ 
+-Los archivos se guardan como UTF-8 con BOM porque Windows PowerShell 5.1 necesita esa marca para interpretar correctamente los caracteres no ASCII.
++Los scripts compatibles con Windows PowerShell 5.1 usan texto ASCII o UTF-8 con BOM cuando contienen caracteres no ASCII. Git normaliza sus finales de linea como CRLF al descargarlos en Windows.
+ 
+ | Script                                     | Finalidad                                                                                                        |
+ | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+@@ -20,3 +20,18 @@ Los archivos se guardan como UTF-8 con BOM porque Windows PowerShell 5.1 necesit
+ | `Inicializar-Administrador.ps1`            | Crear localmente los roles funcionales y la primera cuenta administrativa, sin contraseña predeterminada.        |
+ | `Rotar-CredencialesDesarrollo.ps1`         | Rotar las credenciales de PostgreSQL y verificar ambas identidades antes de retirar respaldos.                   |
+ | `Obtener-HuellaHostSsh.ps1`                | Consultar las claves públicas SSH y calcular candidatos SHA-256 hexadecimales para verificación independiente.   |
++
++## Produccion con Docker Compose en Windows 11
++
++| Script | Finalidad |
++| --- | --- |
++| `produccion-docker/Verificar-RequisitosWindows.ps1` | Comprobar Windows 11, WSL 2, Docker Desktop, Compose y el motor Linux. |
++| `produccion-docker/Preparar-Produccion.ps1` | Crear configuracion, secretos y certificados, y opcionalmente preparar el host Windows. |
++| `produccion-docker/Configurar-HostWindows.ps1` | Instalar la autoridad, configurar firewall y resolucion local. |
++| `produccion-docker/Desplegar-Produccion.ps1` | Construir, migrar e iniciar la composicion productiva. |
++| `produccion-docker/Inicializar-Administrador.ps1` | Crear la primera cuenta sin conservar su contrasena temporal. |
++| `produccion-docker/Verificar-Produccion.ps1` | Comprobar salud, HTTPS, publicacion Syslog y aislamiento de PostgreSQL. |
++| `produccion-docker/Respaldar-Produccion.ps1` | Respaldar base de datos, claves e integridad. |
++| `produccion-docker/Restaurar-Produccion.ps1` | Restaurar un respaldo verificado mediante confirmacion explicita. |
++| `produccion-docker/Actualizar-Produccion.ps1` | Respaldar, actualizar por avance rapido, desplegar y verificar. |
++| `produccion-docker/Detener-Produccion.ps1` | Detener contenedores sin eliminar volumenes. |
+diff --git a/automatizacion/powershell/produccion-docker/Actualizar-Produccion.ps1 b/automatizacion/powershell/produccion-docker/Actualizar-Produccion.ps1
+new file mode 100644
+index 0000000..12301e8
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Actualizar-Produccion.ps1
+@@ -0,0 +1,41 @@
++[CmdletBinding()]
++param(
++    [switch]$Confirmar,
++    [switch]$OmitirGitPull
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++if (-not $Confirmar) {
++    throw 'La actualizacion crea un respaldo y reconstruye los servicios. Repita con -Confirmar.'
++}
++
++& (Join-Path $PSScriptRoot 'Respaldar-Produccion.ps1')
++
++if (-not $OmitirGitPull) {
++    if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
++        throw 'Git no esta disponible. Use -OmitirGitPull si actualizara los archivos por otro medio.'
++    }
++
++    $Estado = @(& git -C $script:RutaRaiz status --porcelain)
++    if ($LASTEXITCODE -ne 0) {
++        throw 'No fue posible consultar el estado del repositorio.'
++    }
++
++    if ($Estado.Count -gt 0) {
++        throw 'El repositorio contiene cambios locales. La actualizacion automatica se detuvo para no sobrescribirlos.'
++    }
++
++    & git -C $script:RutaRaiz pull --ff-only
++    if ($LASTEXITCODE -ne 0) {
++        throw 'Git no pudo actualizar el repositorio mediante avance rapido.'
++    }
++}
++
++& (Join-Path $PSScriptRoot 'Desplegar-Produccion.ps1')
++& (Join-Path $PSScriptRoot 'Verificar-Produccion.ps1')
++
++Write-Host 'RedDiff se actualizo y verifico correctamente.' -ForegroundColor Green
+diff --git a/automatizacion/powershell/produccion-docker/Comun.ps1 b/automatizacion/powershell/produccion-docker/Comun.ps1
+new file mode 100644
+index 0000000..91eed6b
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Comun.ps1
+@@ -0,0 +1,239 @@
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++$script:RutaRaiz = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
++$script:RutaCompose = Join-Path $script:RutaRaiz 'infraestructura\contenedores\produccion\compose.yml'
++$script:RutaEntorno = Join-Path $script:RutaRaiz 'configuracion\entornos\produccion.env'
++$script:RutaPlantillaEntorno = Join-Path $script:RutaRaiz 'configuracion\entornos\produccion.env.example'
++$script:RutaSecretos = Join-Path $script:RutaRaiz 'configuracion\secretos\produccion'
++$script:CodificacionUtf8SinBom = New-Object System.Text.UTF8Encoding($false)
++
++function Test-EsAdministrador {
++    $Identidad = [Security.Principal.WindowsIdentity]::GetCurrent()
++    $Principal = New-Object Security.Principal.WindowsPrincipal($Identidad)
++    return $Principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
++}
++
++function Assert-Archivo {
++    param([Parameter(Mandatory)][string]$Ruta)
++
++    if (-not (Test-Path -LiteralPath $Ruta -PathType Leaf)) {
++        throw "No existe el archivo requerido: $Ruta"
++    }
++}
++
++function Invoke-Docker {
++    [CmdletBinding()]
++    param(
++        [Parameter(Mandatory)][string[]]$Argumentos,
++        [switch]$Capturar
++    )
++
++    if ($Capturar) {
++        $Salida = @(& docker @Argumentos 2>&1)
++        $Codigo = $LASTEXITCODE
++        if ($Codigo -ne 0) {
++            throw "Docker finalizo con codigo $Codigo.`n$($Salida -join [Environment]::NewLine)"
++        }
++
++        return $Salida
++    }
++
++    & docker @Argumentos
++    if ($LASTEXITCODE -ne 0) {
++        throw "Docker finalizo con codigo $LASTEXITCODE."
++    }
++}
++
++function Invoke-RedDiffCompose {
++    [CmdletBinding()]
++    param(
++        [Parameter(Mandatory)][string[]]$Argumentos,
++        [switch]$Capturar
++    )
++
++    $ArgumentosDocker = @(
++        'compose',
++        '--env-file', $script:RutaEntorno,
++        '--file', $script:RutaCompose
++    ) + $Argumentos
++
++    if ($Capturar) {
++        return Invoke-Docker -Argumentos $ArgumentosDocker -Capturar
++    }
++
++    Invoke-Docker -Argumentos $ArgumentosDocker
++}
++
++function Assert-DockerLinuxDisponible {
++    if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
++        throw 'Docker no esta disponible en PATH. Instale e inicie Docker Desktop.'
++    }
++
++    $TipoMotor = @(Invoke-Docker -Argumentos @('info', '--format', '{{.OSType}}') -Capturar |
++        Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++        Select-Object -First 1)
++
++    if ($TipoMotor.Count -eq 0 -or ([string] $TipoMotor[0]).Trim() -ne 'linux') {
++        throw 'Docker Desktop debe estar iniciado en modo Linux containers.'
++    }
++
++    Invoke-Docker -Argumentos @('compose', 'version') | Out-Null
++}
++
++function Get-VariableEntorno {
++    param([Parameter(Mandatory)][string]$Nombre)
++
++    Assert-Archivo -Ruta $script:RutaEntorno
++    $Patron = '^\s*' + [Regex]::Escape($Nombre) + '=(.*)$'
++    $Valor = $null
++
++    foreach ($Linea in [IO.File]::ReadAllLines($script:RutaEntorno)) {
++        if ($Linea -match $Patron) {
++            $Valor = $Matches[1].Trim()
++        }
++    }
++
++    if ([string]::IsNullOrWhiteSpace($Valor)) {
++        throw "La variable $Nombre no esta definida en $script:RutaEntorno."
++    }
++
++    return $Valor
++}
++
++function Set-VariableEntorno {
++    param(
++        [Parameter(Mandatory)][string]$Nombre,
++        [Parameter(Mandatory)][string]$Valor
++    )
++
++    Assert-Archivo -Ruta $script:RutaEntorno
++    $Lineas = [System.Collections.Generic.List[string]]::new()
++    $Patron = '^\s*' + [Regex]::Escape($Nombre) + '='
++    $Actualizada = $false
++
++    foreach ($Linea in [IO.File]::ReadAllLines($script:RutaEntorno)) {
++        if ($Linea -match $Patron) {
++            $Lineas.Add("$Nombre=$Valor")
++            $Actualizada = $true
++        }
++        else {
++            $Lineas.Add($Linea)
++        }
++    }
++
++    if (-not $Actualizada) {
++        $Lineas.Add("$Nombre=$Valor")
++    }
++
++    [IO.File]::WriteAllLines($script:RutaEntorno, $Lineas, $script:CodificacionUtf8SinBom)
++}
++
++function New-SecretoAleatorio {
++    param([int]$CantidadBytes = 48)
++
++    $Bytes = New-Object byte[] $CantidadBytes
++    $Generador = [Security.Cryptography.RandomNumberGenerator]::Create()
++    try {
++        $Generador.GetBytes($Bytes)
++        return [Convert]::ToBase64String($Bytes)
++    }
++    finally {
++        $Generador.Dispose()
++        [Array]::Clear($Bytes, 0, $Bytes.Length)
++    }
++}
++
++function Write-SecretoSiFalta {
++    param([Parameter(Mandatory)][string]$Ruta)
++
++    if (Test-Path -LiteralPath $Ruta -PathType Leaf) {
++        return
++    }
++
++    $Secreto = New-SecretoAleatorio
++    try {
++        [IO.File]::WriteAllText($Ruta, $Secreto, $script:CodificacionUtf8SinBom)
++    }
++    finally {
++        $Secreto = $null
++    }
++}
++
++function Assert-ArchivosProduccion {
++    Assert-Archivo -Ruta $script:RutaCompose
++    Assert-Archivo -Ruta $script:RutaEntorno
++
++    $Archivos = @(
++        'postgresql_contrasena.txt',
++        'postgresql_aplicacion_contrasena.txt',
++        'autoridad_certificadora.crt',
++        'postgresql_servidor.crt',
++        'postgresql_servidor.key',
++        'reddiff_https.crt',
++        'reddiff_https.key',
++        'administrador_inicial_contrasena.txt'
++    )
++
++    foreach ($Archivo in $Archivos) {
++        Assert-Archivo -Ruta (Join-Path $script:RutaSecretos $Archivo)
++    }
++}
++
++function Wait-ServicioSaludable {
++    param(
++        [Parameter(Mandatory)][string]$Servicio,
++        [int]$Intentos = 60
++    )
++
++    $Contenedor = @(Invoke-RedDiffCompose -Argumentos @('ps', '--quiet', $Servicio) -Capturar |
++        Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++        Select-Object -First 1)
++
++    if ($Contenedor.Count -eq 0) {
++        throw "No se encontro el contenedor del servicio $Servicio."
++    }
++
++    $Id = ([string] $Contenedor[0]).Trim()
++    for ($Intento = 1; $Intento -le $Intentos; $Intento++) {
++        $Estado = @(Invoke-Docker -Argumentos @(
++                'inspect',
++                '--format', '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}',
++                $Id
++            ) -Capturar | Select-Object -First 1)
++
++        $EstadoActual = if ($Estado.Count -gt 0) { ([string] $Estado[0]).Trim() } else { '' }
++        switch ($EstadoActual) {
++            'healthy' { return }
++            'unhealthy' {
++                Invoke-RedDiffCompose -Argumentos @('logs', '--tail', '100', $Servicio)
++                throw "El servicio $Servicio alcanzo el estado unhealthy."
++            }
++            'exited' {
++                Invoke-RedDiffCompose -Argumentos @('logs', '--tail', '100', $Servicio)
++                throw "El servicio $Servicio se detuvo antes de quedar saludable."
++            }
++            'dead' {
++                Invoke-RedDiffCompose -Argumentos @('logs', '--tail', '100', $Servicio)
++                throw "El servicio $Servicio alcanzo el estado dead."
++            }
++        }
++
++        Start-Sleep -Seconds 2
++    }
++
++    Invoke-RedDiffCompose -Argumentos @('logs', '--tail', '100', $Servicio)
++    throw "El servicio $Servicio no alcanzo el estado saludable a tiempo."
++}
++
++function ConvertTo-TextoPlanoTemporal {
++    param([Parameter(Mandatory)][Security.SecureString]$Valor)
++
++    $Puntero = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Valor)
++    try {
++        return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($Puntero)
++    }
++    finally {
++        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Puntero)
++    }
++}
+diff --git a/automatizacion/powershell/produccion-docker/Configurar-HostWindows.ps1 b/automatizacion/powershell/produccion-docker/Configurar-HostWindows.ps1
+new file mode 100644
+index 0000000..96b6a80
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Configurar-HostWindows.ps1
+@@ -0,0 +1,84 @@
++[CmdletBinding()]
++param(
++    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$NombreHost,
++    [string[]]$OrigenWeb = @('LocalSubnet'),
++    [string[]]$OrigenSyslog = @('LocalSubnet'),
++    [switch]$AgregarResolucionLocal,
++    [string]$DireccionResolucionLocal = '127.0.0.1'
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++if (-not (Test-EsAdministrador)) {
++    throw 'Abra PowerShell como administrador para configurar certificados, firewall y archivo hosts.'
++}
++
++Assert-Archivo -Ruta (Join-Path $script:RutaSecretos 'autoridad_certificadora.crt')
++
++$RutaAutoridad = Join-Path $script:RutaSecretos 'autoridad_certificadora.crt'
++$Certificado = Import-Certificate `
++    -FilePath $RutaAutoridad `
++    -CertStoreLocation 'Cert:\LocalMachine\Root'
++
++if (-not $Certificado) {
++    throw 'No fue posible instalar la autoridad certificadora de RedDiff.'
++}
++
++function Set-ReglaRedDiff {
++    param(
++        [Parameter(Mandatory)][string]$Nombre,
++        [Parameter(Mandatory)][string]$Descripcion,
++        [Parameter(Mandatory)][ValidateSet('TCP', 'UDP')][string]$Protocolo,
++        [Parameter(Mandatory)][int]$Puerto,
++        [Parameter(Mandatory)][string[]]$Origen
++    )
++
++    $Existente = Get-NetFirewallRule -Name $Nombre -ErrorAction SilentlyContinue
++    if ($Existente) {
++        Remove-NetFirewallRule -Name $Nombre
++    }
++
++    New-NetFirewallRule `
++        -Name $Nombre `
++        -DisplayName $Descripcion `
++        -Direction Inbound `
++        -Action Allow `
++        -Enabled True `
++        -Profile Domain, Private `
++        -Protocol $Protocolo `
++        -LocalPort $Puerto `
++        -RemoteAddress $Origen | Out-Null
++}
++
++$PuertoHttps = [int] (Get-VariableEntorno -Nombre 'REDDIFF_HTTPS_PUERTO')
++$PuertoSyslog = [int] (Get-VariableEntorno -Nombre 'REDDIFF_SYSLOG_PUERTO_PUBLICO')
++
++Set-ReglaRedDiff `
++    -Nombre 'RedDiff-Docker-HTTPS' `
++    -Descripcion 'RedDiff HTTPS mediante Docker Compose' `
++    -Protocolo TCP `
++    -Puerto $PuertoHttps `
++    -Origen $OrigenWeb
++
++Set-ReglaRedDiff `
++    -Nombre 'RedDiff-Docker-Syslog' `
++    -Descripcion 'RedDiff Syslog mediante Docker Compose' `
++    -Protocolo UDP `
++    -Puerto $PuertoSyslog `
++    -Origen $OrigenSyslog
++
++if ($AgregarResolucionLocal -and $NombreHost -notmatch '^\d{1,3}(\.\d{1,3}){3}$') {
++    $RutaHosts = Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
++    $Patron = '(?im)^\s*[^#\r\n]+\s+' + [Regex]::Escape($NombreHost) + '(?:\s|$)'
++    $Contenido = [IO.File]::ReadAllText($RutaHosts)
++
++    if ($Contenido -notmatch $Patron) {
++        $Linea = "`r`n$DireccionResolucionLocal`t$NombreHost`t# RedDiff Docker`r`n"
++        [IO.File]::AppendAllText($RutaHosts, $Linea, [Text.Encoding]::ASCII)
++    }
++}
++
++Write-Host 'Certificado, reglas de firewall y resolucion local configurados.' -ForegroundColor Green
+diff --git a/automatizacion/powershell/produccion-docker/Desplegar-Produccion.ps1 b/automatizacion/powershell/produccion-docker/Desplegar-Produccion.ps1
+new file mode 100644
+index 0000000..28b0315
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Desplegar-Produccion.ps1
+@@ -0,0 +1,46 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++Assert-DockerLinuxDisponible
++Assert-ArchivosProduccion
++
++Write-Host 'Validando Docker Compose...' -ForegroundColor Cyan
++Invoke-RedDiffCompose -Argumentos @('config', '--quiet')
++
++Write-Host 'Construyendo las imagenes de RedDiff...' -ForegroundColor Cyan
++Invoke-RedDiffCompose -Argumentos @(
++    '--profile', 'herramientas',
++    'build',
++    'base-datos', 'migrador', 'api', 'web'
++)
++
++Write-Host 'Iniciando PostgreSQL...' -ForegroundColor Cyan
++Invoke-RedDiffCompose -Argumentos @('up', '--detach', 'base-datos')
++Wait-ServicioSaludable -Servicio 'base-datos' -Intentos 60
++
++Write-Host 'Aplicando migraciones con la cuenta administrativa...' -ForegroundColor Cyan
++Invoke-RedDiffCompose -Argumentos @(
++    '--profile', 'herramientas',
++    'run', '--rm', 'migrador'
++)
++
++Write-Host 'Restableciendo los privilegios de la cuenta de aplicacion...' -ForegroundColor Cyan
++Invoke-RedDiffCompose -Argumentos @(
++    'exec', '--no-TTY', 'base-datos',
++    'sh', '/opt/reddiff/herramientas/configurar-usuario-aplicacion.sh'
++)
++
++Write-Host 'Iniciando API y cliente web...' -ForegroundColor Cyan
++Invoke-RedDiffCompose -Argumentos @('up', '--detach', 'api', 'web')
++Wait-ServicioSaludable -Servicio 'api' -Intentos 60
++Wait-ServicioSaludable -Servicio 'web' -Intentos 60
++
++Invoke-RedDiffCompose -Argumentos @('ps')
++
++Write-Host 'RedDiff se desplego correctamente con Docker Compose.' -ForegroundColor Green
++Write-Host 'Si es la primera instalacion, ejecute Inicializar-Administrador.ps1.'
+diff --git a/automatizacion/powershell/produccion-docker/Detener-Produccion.ps1 b/automatizacion/powershell/produccion-docker/Detener-Produccion.ps1
+new file mode 100644
+index 0000000..764fd12
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Detener-Produccion.ps1
+@@ -0,0 +1,14 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++Assert-DockerLinuxDisponible
++Assert-Archivo -Ruta $script:RutaEntorno
++Assert-Archivo -Ruta $script:RutaCompose
++
++Invoke-RedDiffCompose -Argumentos @('down')
++Write-Host 'Los contenedores se detuvieron; los volumenes y la informacion se conservaron.' -ForegroundColor Green
+diff --git a/automatizacion/powershell/produccion-docker/Inicializar-Administrador.ps1 b/automatizacion/powershell/produccion-docker/Inicializar-Administrador.ps1
+new file mode 100644
+index 0000000..8e4f46c
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Inicializar-Administrador.ps1
+@@ -0,0 +1,42 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++Assert-DockerLinuxDisponible
++Assert-ArchivosProduccion
++
++$RutaSecreto = Join-Path $script:RutaSecretos 'administrador_inicial_contrasena.txt'
++$Contrasena = $null
++$Confirmacion = $null
++
++try {
++    $ContrasenaSegura = Read-Host 'Contrasena del primer administrador' -AsSecureString
++    $ConfirmacionSegura = Read-Host 'Repita la contrasena' -AsSecureString
++    $Contrasena = ConvertTo-TextoPlanoTemporal -Valor $ContrasenaSegura
++    $Confirmacion = ConvertTo-TextoPlanoTemporal -Valor $ConfirmacionSegura
++
++    if ($Contrasena -cne $Confirmacion) {
++        throw 'Las contrasenas no coinciden.'
++    }
++
++    if ($Contrasena.Length -lt 12 -or $Contrasena.Length -gt 128) {
++        throw 'La contrasena debe contener entre 12 y 128 caracteres.'
++    }
++
++    [IO.File]::WriteAllText($RutaSecreto, $Contrasena, $script:CodificacionUtf8SinBom)
++    Invoke-RedDiffCompose -Argumentos @(
++        '--profile', 'herramientas',
++        'run', '--rm', 'inicializador'
++    )
++}
++finally {
++    [IO.File]::WriteAllText($RutaSecreto, '', $script:CodificacionUtf8SinBom)
++    $Contrasena = $null
++    $Confirmacion = $null
++}
++
++Write-Host 'La primera cuenta administrativa fue creada correctamente.' -ForegroundColor Green
+diff --git a/automatizacion/powershell/produccion-docker/Preparar-Produccion.ps1 b/automatizacion/powershell/produccion-docker/Preparar-Produccion.ps1
+new file mode 100644
+index 0000000..f93431c
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Preparar-Produccion.ps1
+@@ -0,0 +1,111 @@
++[CmdletBinding()]
++param(
++    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$NombreHost,
++    [string[]]$OrigenWeb = @('LocalSubnet'),
++    [string[]]$OrigenSyslog = @('LocalSubnet'),
++    [switch]$ConfigurarHostWindows,
++    [switch]$AgregarResolucionLocal
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++if ($NombreHost -notmatch '^[A-Za-z0-9.-]+$') {
++    throw 'El nombre del host contiene caracteres no permitidos.'
++}
++
++Assert-DockerLinuxDisponible
++Assert-Archivo -Ruta $script:RutaPlantillaEntorno
++Assert-Archivo -Ruta $script:RutaCompose
++
++if ($ConfigurarHostWindows -and -not (Test-EsAdministrador)) {
++    throw 'Abra PowerShell como administrador cuando utilice -ConfigurarHostWindows.'
++}
++
++if (-not (Test-Path -LiteralPath $script:RutaEntorno -PathType Leaf)) {
++    Copy-Item -LiteralPath $script:RutaPlantillaEntorno -Destination $script:RutaEntorno
++}
++
++Set-VariableEntorno -Nombre 'REDDIFF_NOMBRE_HOST' -Valor $NombreHost
++Set-VariableEntorno -Nombre 'REDDIFF_ORIGEN_CLIENTE' -Valor "https://$NombreHost"
++
++if (-not (Test-Path -LiteralPath $script:RutaSecretos -PathType Container)) {
++    New-Item -ItemType Directory -Path $script:RutaSecretos | Out-Null
++}
++
++Write-SecretoSiFalta -Ruta (Join-Path $script:RutaSecretos 'postgresql_contrasena.txt')
++Write-SecretoSiFalta -Ruta (Join-Path $script:RutaSecretos 'postgresql_aplicacion_contrasena.txt')
++
++$RutaAdministrador = Join-Path $script:RutaSecretos 'administrador_inicial_contrasena.txt'
++if (-not (Test-Path -LiteralPath $RutaAdministrador -PathType Leaf)) {
++    [IO.File]::WriteAllText($RutaAdministrador, '', $script:CodificacionUtf8SinBom)
++}
++
++$ArchivosCertificados = @(
++    'autoridad_certificadora.crt',
++    'autoridad_certificadora.key',
++    'postgresql_servidor.crt',
++    'postgresql_servidor.key',
++    'reddiff_https.crt',
++    'reddiff_https.key'
++)
++
++$Existentes = @($ArchivosCertificados | Where-Object {
++        Test-Path -LiteralPath (Join-Path $script:RutaSecretos $_) -PathType Leaf
++    })
++
++if ($Existentes.Count -gt 0 -and $Existentes.Count -lt $ArchivosCertificados.Count) {
++    throw "El conjunto de certificados esta incompleto. Revise $script:RutaSecretos; no se reemplazara material existente."
++}
++
++if ($Existentes.Count -eq 0) {
++    $RutaDockerfile = Join-Path $script:RutaRaiz 'infraestructura\contenedores\produccion\certificados\Dockerfile'
++    $Etiqueta = 'reddiff-certificados:local'
++    Assert-Archivo -Ruta $RutaDockerfile
++
++    Write-Host 'Construyendo la herramienta aislada para generar certificados...' -ForegroundColor Cyan
++    Invoke-Docker -Argumentos @(
++        'build',
++        '--file', $RutaDockerfile,
++        '--tag', $Etiqueta,
++        $script:RutaRaiz
++    )
++
++    $Montaje = "type=bind,source=$script:RutaSecretos,destination=/salida"
++    Invoke-Docker -Argumentos @(
++        'run', '--rm',
++        '--mount', $Montaje,
++        $Etiqueta,
++        $NombreHost
++    )
++}
++
++# Limita el acceso local a secretos al usuario actual, SYSTEM y administradores.
++$SidUsuario = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
++& icacls $script:RutaSecretos '/inheritance:r' `
++    '/grant:r' "*${SidUsuario}:(OI)(CI)F" `
++    '*S-1-5-18:(OI)(CI)F' `
++    '*S-1-5-32-544:(OI)(CI)F' `
++    '/T' '/C' | Out-Null
++
++if ($LASTEXITCODE -ne 0) {
++    throw 'No fue posible proteger el directorio local de secretos con ACL de Windows.'
++}
++
++if ($ConfigurarHostWindows) {
++    $ArgumentosHost = @{
++        NombreHost = $NombreHost
++        OrigenWeb = $OrigenWeb
++        OrigenSyslog = $OrigenSyslog
++    }
++    if ($AgregarResolucionLocal) {
++        $ArgumentosHost.AgregarResolucionLocal = $true
++    }
++
++    & (Join-Path $PSScriptRoot 'Configurar-HostWindows.ps1') @ArgumentosHost
++}
++
++Write-Host "Preparacion completada para https://$NombreHost." -ForegroundColor Green
++Write-Host "Revise $script:RutaEntorno y luego ejecute Desplegar-Produccion.ps1."
+diff --git a/automatizacion/powershell/produccion-docker/Respaldar-Produccion.ps1 b/automatizacion/powershell/produccion-docker/Respaldar-Produccion.ps1
+new file mode 100644
+index 0000000..ca1f08f
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Respaldar-Produccion.ps1
+@@ -0,0 +1,97 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++Assert-DockerLinuxDisponible
++Assert-ArchivosProduccion
++Wait-ServicioSaludable -Servicio 'base-datos' -Intentos 5
++Wait-ServicioSaludable -Servicio 'api' -Intentos 5
++
++$RutaRespaldos = Join-Path $script:RutaRaiz 'respaldos\produccion'
++$MarcaTiempo = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')
++$RutaFinal = Join-Path $RutaRespaldos "reddiff-$MarcaTiempo"
++$RutaTemporal = "$RutaFinal.tmp"
++
++New-Item -ItemType Directory -Path $RutaRespaldos -Force | Out-Null
++New-Item -ItemType Directory -Path $RutaTemporal | Out-Null
++
++$ContenedorBaseDatos = @(Invoke-RedDiffCompose -Argumentos @('ps', '--quiet', 'base-datos') -Capturar |
++    Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++    Select-Object -First 1)
++$ContenedorApi = @(Invoke-RedDiffCompose -Argumentos @('ps', '--quiet', 'api') -Capturar |
++    Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++    Select-Object -First 1)
++
++if ($ContenedorBaseDatos.Count -eq 0 -or $ContenedorApi.Count -eq 0) {
++    throw 'No se encontraron los contenedores requeridos para el respaldo.'
++}
++
++$IdBaseDatos = ([string] $ContenedorBaseDatos[0]).Trim()
++$IdApi = ([string] $ContenedorApi[0]).Trim()
++$RutaDumpContenedor = '/tmp/reddiff-respaldo.dump'
++
++try {
++    Invoke-Docker -Argumentos @(
++        'exec', $IdBaseDatos,
++        'sh', '-ec',
++        'export PGPASSWORD="$(cat /run/secrets/postgresql_contrasena)"; exec pg_dump --host=127.0.0.1 --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --format=custom --no-password --file=/tmp/reddiff-respaldo.dump'
++    )
++
++    Invoke-Docker -Argumentos @(
++        'cp',
++        "${IdBaseDatos}:$RutaDumpContenedor",
++        (Join-Path $RutaTemporal 'base-datos.dump')
++    )
++
++    $VolumenClaves = @(Invoke-Docker -Argumentos @(
++            'inspect',
++            '--format', '{{range .Mounts}}{{if eq .Destination "/var/lib/reddiff/claves-proteccion"}}{{.Name}}{{end}}{{end}}',
++            $IdApi
++        ) -Capturar | Select-Object -First 1)
++
++    if ($VolumenClaves.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string] $VolumenClaves[0])) {
++        throw 'No se encontro el volumen de claves de proteccion.'
++    }
++
++    $NombreVolumen = ([string] $VolumenClaves[0]).Trim()
++    $MontajeDestino = "type=bind,source=$RutaTemporal,destination=/destino"
++    Invoke-Docker -Argumentos @(
++        'run', '--rm',
++        '--volume', "${NombreVolumen}:/origen:ro",
++        '--mount', $MontajeDestino,
++        'alpine:3.22',
++        'tar', '-czf', '/destino/claves-proteccion.tar.gz', '-C', '/origen', '.'
++    )
++
++    $Archivos = @('base-datos.dump', 'claves-proteccion.tar.gz')
++    $Lineas = foreach ($Archivo in $Archivos) {
++        $Hash = Get-FileHash -LiteralPath (Join-Path $RutaTemporal $Archivo) -Algorithm SHA256
++        "$($Hash.Hash.ToLowerInvariant())  $Archivo"
++    }
++
++    [IO.File]::WriteAllLines(
++        (Join-Path $RutaTemporal 'manifiesto.sha256'),
++        $Lineas,
++        $script:CodificacionUtf8SinBom
++    )
++
++    Move-Item -LiteralPath $RutaTemporal -Destination $RutaFinal
++}
++finally {
++    try {
++        Invoke-Docker -Argumentos @('exec', $IdBaseDatos, 'rm', '-f', $RutaDumpContenedor)
++    }
++    catch {
++        Write-Warning 'No fue posible retirar el archivo temporal del contenedor de PostgreSQL.'
++    }
++
++    if (Test-Path -LiteralPath $RutaTemporal -PathType Container) {
++        Remove-Item -LiteralPath $RutaTemporal -Recurse -Force
++    }
++}
++
++Write-Host "Respaldo creado: $RutaFinal" -ForegroundColor Green
+diff --git a/automatizacion/powershell/produccion-docker/Restaurar-Produccion.ps1 b/automatizacion/powershell/produccion-docker/Restaurar-Produccion.ps1
+new file mode 100644
+index 0000000..d24bb09
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Restaurar-Produccion.ps1
+@@ -0,0 +1,117 @@
++[CmdletBinding()]
++param(
++    [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$RutaRespaldo,
++    [switch]$Confirmar
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++if (-not $Confirmar) {
++    throw 'La restauracion reemplaza la base de datos y las claves actuales. Repita con -Confirmar.'
++}
++
++Assert-DockerLinuxDisponible
++Assert-ArchivosProduccion
++
++$RutaRespaldo = [IO.Path]::GetFullPath($RutaRespaldo)
++if (-not (Test-Path -LiteralPath $RutaRespaldo -PathType Container)) {
++    throw "No existe el directorio de respaldo: $RutaRespaldo"
++}
++
++$RutaDump = Join-Path $RutaRespaldo 'base-datos.dump'
++$RutaClaves = Join-Path $RutaRespaldo 'claves-proteccion.tar.gz'
++$RutaManifiesto = Join-Path $RutaRespaldo 'manifiesto.sha256'
++Assert-Archivo -Ruta $RutaDump
++Assert-Archivo -Ruta $RutaClaves
++Assert-Archivo -Ruta $RutaManifiesto
++
++$Esperados = @{}
++foreach ($Linea in [IO.File]::ReadAllLines($RutaManifiesto)) {
++    if ($Linea -match '^([0-9a-fA-F]{64})\s+\*?(.+)$') {
++        $Esperados[$Matches[2].Trim()] = $Matches[1].ToLowerInvariant()
++    }
++}
++
++foreach ($Archivo in @('base-datos.dump', 'claves-proteccion.tar.gz')) {
++    if (-not $Esperados.ContainsKey($Archivo)) {
++        throw "El manifiesto no contiene $Archivo."
++    }
++
++    $Actual = (Get-FileHash -LiteralPath (Join-Path $RutaRespaldo $Archivo) -Algorithm SHA256).Hash.ToLowerInvariant()
++    if ($Actual -cne $Esperados[$Archivo]) {
++        throw "La integridad de $Archivo no coincide con el manifiesto."
++    }
++}
++
++Invoke-RedDiffCompose -Argumentos @('stop', 'web', 'api')
++Invoke-RedDiffCompose -Argumentos @('up', '--detach', 'base-datos')
++Wait-ServicioSaludable -Servicio 'base-datos' -Intentos 60
++
++$ContenedorBaseDatos = @(Invoke-RedDiffCompose -Argumentos @('ps', '--quiet', 'base-datos') -Capturar |
++    Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++    Select-Object -First 1)
++$ContenedorApi = @(Invoke-RedDiffCompose -Argumentos @('ps', '--all', '--quiet', 'api') -Capturar |
++    Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++    Select-Object -First 1)
++
++if ($ContenedorBaseDatos.Count -eq 0 -or $ContenedorApi.Count -eq 0) {
++    throw 'No se encontraron los contenedores requeridos para restaurar RedDiff.'
++}
++
++$IdBaseDatos = ([string] $ContenedorBaseDatos[0]).Trim()
++$IdApi = ([string] $ContenedorApi[0]).Trim()
++$RutaDumpContenedor = '/tmp/reddiff-restauracion.dump'
++
++try {
++    Invoke-Docker -Argumentos @('cp', $RutaDump, "${IdBaseDatos}:$RutaDumpContenedor")
++
++    Invoke-Docker -Argumentos @(
++        'exec', $IdBaseDatos,
++        'sh', '-ec',
++        'export PGPASSWORD="$(cat /run/secrets/postgresql_contrasena)"; dropdb --host=127.0.0.1 --username="$POSTGRES_USER" --if-exists --force "$POSTGRES_DB"; createdb --host=127.0.0.1 --username="$POSTGRES_USER" --owner="$POSTGRES_USER" "$POSTGRES_DB"; pg_restore --host=127.0.0.1 --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-owner --no-privileges /tmp/reddiff-restauracion.dump'
++    )
++
++    $VolumenClaves = @(Invoke-Docker -Argumentos @(
++            'inspect',
++            '--format', '{{range .Mounts}}{{if eq .Destination "/var/lib/reddiff/claves-proteccion"}}{{.Name}}{{end}}{{end}}',
++            $IdApi
++        ) -Capturar | Select-Object -First 1)
++
++    if ($VolumenClaves.Count -eq 0 -or [string]::IsNullOrWhiteSpace([string] $VolumenClaves[0])) {
++        throw 'No se encontro el volumen de claves de proteccion.'
++    }
++
++    $NombreVolumen = ([string] $VolumenClaves[0]).Trim()
++    $MontajeRespaldo = "type=bind,source=$RutaRespaldo,destination=/respaldo,readonly"
++    Invoke-Docker -Argumentos @(
++        'run', '--rm',
++        '--volume', "${NombreVolumen}:/destino",
++        '--mount', $MontajeRespaldo,
++        'alpine:3.22',
++        'sh', '-ec',
++        'find /destino -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +; tar -xzf /respaldo/claves-proteccion.tar.gz -C /destino; chown -R 1654:1654 /destino; chmod 0700 /destino'
++    )
++
++    Invoke-RedDiffCompose -Argumentos @(
++        'exec', '--no-TTY', 'base-datos',
++        'sh', '/opt/reddiff/herramientas/configurar-usuario-aplicacion.sh'
++    )
++
++    Invoke-RedDiffCompose -Argumentos @('up', '--detach', 'api', 'web')
++    Wait-ServicioSaludable -Servicio 'api' -Intentos 60
++    Wait-ServicioSaludable -Servicio 'web' -Intentos 60
++}
++finally {
++    try {
++        Invoke-Docker -Argumentos @('exec', $IdBaseDatos, 'rm', '-f', $RutaDumpContenedor)
++    }
++    catch {
++        Write-Warning 'No fue posible retirar el archivo temporal de restauracion.'
++    }
++}
++
++& (Join-Path $PSScriptRoot 'Verificar-Produccion.ps1')
++Write-Host 'RedDiff se restauro y verifico correctamente.' -ForegroundColor Green
+diff --git a/automatizacion/powershell/produccion-docker/Verificar-Produccion.ps1 b/automatizacion/powershell/produccion-docker/Verificar-Produccion.ps1
+new file mode 100644
+index 0000000..67d2cc5
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Verificar-Produccion.ps1
+@@ -0,0 +1,86 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++Assert-DockerLinuxDisponible
++Assert-ArchivosProduccion
++
++Wait-ServicioSaludable -Servicio 'base-datos' -Intentos 5
++Wait-ServicioSaludable -Servicio 'api' -Intentos 5
++Wait-ServicioSaludable -Servicio 'web' -Intentos 5
++
++$NombreHost = Get-VariableEntorno -Nombre 'REDDIFF_NOMBRE_HOST'
++$PuertoHttps = [int] (Get-VariableEntorno -Nombre 'REDDIFF_HTTPS_PUERTO')
++$PuertoSyslog = [int] (Get-VariableEntorno -Nombre 'REDDIFF_SYSLOG_PUERTO_PUBLICO')
++$Uri = "https://${NombreHost}:$PuertoHttps/salud/listo"
++
++try {
++    $Respuesta = Invoke-WebRequest -Uri $Uri -UseBasicParsing -TimeoutSec 15
++}
++catch {
++    throw "No fue posible validar $Uri. Compruebe la resolucion del nombre y la confianza del certificado. $($_.Exception.Message)"
++}
++
++if ($Respuesta.StatusCode -ne 200) {
++    throw "El endpoint de salud devolvio HTTP $($Respuesta.StatusCode)."
++}
++
++$ContenedorBaseDatos = @(Invoke-RedDiffCompose -Argumentos @('ps', '--quiet', 'base-datos') -Capturar |
++    Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++    Select-Object -First 1)
++$ContenedorApi = @(Invoke-RedDiffCompose -Argumentos @('ps', '--quiet', 'api') -Capturar |
++    Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) } |
++    Select-Object -First 1)
++
++if ($ContenedorBaseDatos.Count -eq 0 -or $ContenedorApi.Count -eq 0) {
++    throw 'No se encontraron los contenedores necesarios para validar los puertos publicados.'
++}
++
++$PublicacionBaseDatos = @(Invoke-Docker -Argumentos @(
++        'inspect',
++        '--format', '{{json (index .NetworkSettings.Ports "5432/tcp")}}',
++        ([string] $ContenedorBaseDatos[0]).Trim()
++    ) -Capturar | Where-Object {
++        -not [string]::IsNullOrWhiteSpace([string] $_) -and ([string] $_).Trim() -ne 'null'
++    })
++
++if ($PublicacionBaseDatos.Count -gt 0) {
++    throw "PostgreSQL no debe estar publicado en Windows: $($PublicacionBaseDatos -join ', ')"
++}
++
++$PuertoWeb = Test-NetConnection -ComputerName '127.0.0.1' -Port $PuertoHttps -InformationLevel Quiet
++if (-not $PuertoWeb) {
++    throw "Windows no puede alcanzar el puerto HTTPS $PuertoHttps."
++}
++
++$SalidaPublicacionSyslog = @(Invoke-Docker -Argumentos @(
++        'inspect',
++        '--format', '{{json (index .NetworkSettings.Ports "5514/udp")}}',
++        ([string] $ContenedorApi[0]).Trim()
++    ) -Capturar | Select-Object -First 1)
++
++if ($SalidaPublicacionSyslog.Count -eq 0 -or
++    [string]::IsNullOrWhiteSpace([string] $SalidaPublicacionSyslog[0]) -or
++    ([string] $SalidaPublicacionSyslog[0]).Trim() -eq 'null') {
++    throw "No se encontro la publicacion UDP de Syslog esperada en el puerto $PuertoSyslog."
++}
++
++$PublicacionesSyslog = @(([string] $SalidaPublicacionSyslog[0]) | ConvertFrom-Json)
++$PuertoSyslogCorrecto = @($PublicacionesSyslog | Where-Object {
++        [int] ($_.HostPort) -eq $PuertoSyslog
++    })
++
++if ($PuertoSyslogCorrecto.Count -eq 0) {
++    $PuertosEncontrados = @($PublicacionesSyslog | ForEach-Object { $_.HostPort }) -join ', '
++    throw "Syslog no esta publicado en UDP $PuertoSyslog. Puertos encontrados: $PuertosEncontrados."
++}
++
++Invoke-RedDiffCompose -Argumentos @('ps')
++Write-Host "Salud HTTPS confirmada en $Uri." -ForegroundColor Green
++Write-Host "Syslog publicado en UDP $PuertoSyslog."
++Write-Host 'PostgreSQL permanece sin publicacion en el host.'
++Write-Host 'La verificacion tecnica de RedDiff finalizo correctamente.' -ForegroundColor Green
+diff --git a/automatizacion/powershell/produccion-docker/Verificar-RequisitosWindows.ps1 b/automatizacion/powershell/produccion-docker/Verificar-RequisitosWindows.ps1
+new file mode 100644
+index 0000000..44e4946
+--- /dev/null
++++ b/automatizacion/powershell/produccion-docker/Verificar-RequisitosWindows.ps1
+@@ -0,0 +1,43 @@
++[CmdletBinding()]
++param()
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = 'Stop'
++
++. (Join-Path $PSScriptRoot 'Comun.ps1')
++
++$Sistema = Get-CimInstance Win32_OperatingSystem
++if ($Sistema.Caption -notmatch 'Windows 11') {
++    throw "Este procedimiento esta validado para Windows 11. Sistema detectado: $($Sistema.Caption)."
++}
++
++if (-not [Environment]::Is64BitOperatingSystem) {
++    throw 'RedDiff requiere Windows de 64 bits.'
++}
++
++if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue)) {
++    throw 'WSL 2 no esta instalado.'
++}
++
++& wsl.exe --status
++if ($LASTEXITCODE -ne 0) {
++    throw 'WSL no respondio correctamente. Ejecute wsl --update y reinicie Windows.'
++}
++
++Assert-DockerLinuxDisponible
++
++$VersionDocker = @(Invoke-Docker -Argumentos @('version', '--format', '{{.Server.Version}}') -Capturar |
++    Select-Object -First 1)
++$VersionCompose = @(Invoke-Docker -Argumentos @('compose', 'version', '--short') -Capturar |
++    Select-Object -First 1)
++
++$PerfilPublico = @(Get-NetConnectionProfile | Where-Object NetworkCategory -eq 'Public')
++if ($PerfilPublico.Count -gt 0) {
++    Write-Warning 'Existe una interfaz con perfil Publico. Las reglas de RedDiff solo se habilitan para Domain y Private.'
++}
++
++Write-Host "Windows detectado: $($Sistema.Caption) $($Sistema.Version)" -ForegroundColor Green
++Write-Host "Docker Engine: $(([string] $VersionDocker[0]).Trim())"
++Write-Host "Docker Compose: $(([string] $VersionCompose[0]).Trim())"
++Write-Host 'Motor de contenedores Linux disponible.'
++Write-Host 'Los requisitos de Windows finalizaron correctamente.' -ForegroundColor Green
+diff --git a/configuracion/secretos/README.md b/configuracion/secretos/README.md
+index 8c2cb3d..e7b4977 100644
+--- a/configuracion/secretos/README.md
++++ b/configuracion/secretos/README.md
+@@ -17,8 +17,8 @@ Después de validar la migración inicial, las credenciales pueden renovarse de
+ 
+ La operación cambia ambas identidades dentro de una transacción, recrea el contenedor y verifica las conexiones administrativa y de aplicación. Los archivos temporales `.nuevo` y `.anterior` permanecen ignorados y solo se conservan si hace falta recuperar una rotación incompleta.
+ 
+-Para la instalación productiva con Docker Compose, `Preparar-Produccion.sh` crea un subdirectorio `produccion` con contraseñas y material criptográfico exclusivo del ambiente. Todo el subdirectorio permanece fuera de Git y del contexto de construcción.
++Para Docker Compose en Windows 11, `automatizacion/powershell/produccion-docker/Preparar-Produccion.ps1` crea el subdirectorio `produccion`, genera contrasenas y utiliza un contenedor auxiliar para emitir el material criptografico. La variante Linux ofrece el flujo equivalente mediante `Preparar-Produccion.sh`. Todo el subdirectorio permanece fuera de Git y del contexto de construccion.
+ 
+-La instalación nativa de Windows no utiliza esta carpeta. Conserva sus secretos en `C:\ProgramData\RedDiff\secretos` y aplica ACL para que el grupo de aplicaciones IIS solo pueda leer la contraseña limitada de la aplicación; la credencial administrativa permanece disponible únicamente para `SYSTEM` y administradores locales.
++La instalacion nativa alternativa de Windows no utiliza esta carpeta. Conserva sus secretos en `C:\ProgramData\RedDiff\secretos`.
+ 
+ En una instalación definitiva, sus permisos, respaldo cifrado y acceso deben quedar bajo control de los operadores designados por LABYMED. La clave de la autoridad certificadora no se monta en los servicios y debe guardarse separadamente después de emitir los certificados.
+diff --git a/documentacion/decisiones/0018-despliegue-nativo-windows.md b/documentacion/decisiones/0018-despliegue-nativo-windows.md
+index 1c61e9a..d816d52 100644
+--- a/documentacion/decisiones/0018-despliegue-nativo-windows.md
++++ b/documentacion/decisiones/0018-despliegue-nativo-windows.md
+@@ -1,5 +1,7 @@
+ # 0018. Despliegue nativo en Windows
+ 
++> Estado: reemplazada para el despliegue objetivo por la ADR 0019. Se conserva como alternativa documentada de contingencia.
++
+ ## Estado
+ 
+ Aceptada.
+diff --git a/documentacion/decisiones/0019-docker-compose-sobre-windows-11.md b/documentacion/decisiones/0019-docker-compose-sobre-windows-11.md
+new file mode 100644
+index 0000000..fc10454
+--- /dev/null
++++ b/documentacion/decisiones/0019-docker-compose-sobre-windows-11.md
+@@ -0,0 +1,25 @@
++# ADR 0019: Docker Compose sobre Windows 11
++
++- Estado: aceptada
++- Fecha: 2026-10-14
++- Reemplaza para el despliegue objetivo a: ADR 0018
++
++## Contexto
++
++LABYMED S.A. necesita instalar RedDiff en Windows evitando instalaciones separadas de IIS, PostgreSQL, .NET y Node.js. La composicion productiva existente utiliza imagenes Linux mantenidas para Nginx, ASP.NET Core y PostgreSQL.
++
++## Decision
++
++- El host operativo sera una PC fisica con Windows 11 Pro o Enterprise x64.
++- Docker Desktop utilizara WSL 2 y el modo Linux containers.
++- Docker Compose ejecutara Nginx, API, PostgreSQL, migraciones e inicializacion.
++- La administracion se realizara desde PowerShell mediante scripts versionados.
++- Windows publicara unicamente TCP 443 y UDP 514, restringidos por firewall.
++- PostgreSQL y el puerto HTTP de la API permaneceran en redes privadas de Compose.
++- Los secretos se conservaran fuera de Git y se montaran como archivos.
++- Los datos de PostgreSQL y las claves de proteccion utilizaran volumenes independientes.
++- La validacion en el ambiente definitivo incluira la conservacion de la IP de origen Syslog.
++
++## Consecuencias
++
++Windows no necesita los runtimes ni servidores utilizados por la aplicacion. Docker Desktop y WSL 2 se convierten en dependencias de plataforma y deben iniciar despues de cada reinicio. El despliegue no se considera aceptado hasta completar pruebas HTTPS, SSH, NETCONF, Syslog, persistencia, respaldo y restauracion en la PC seleccionada.
+diff --git a/documentacion/despliegue/README.md b/documentacion/despliegue/README.md
+index 336b77c..63721b0 100644
+--- a/documentacion/despliegue/README.md
++++ b/documentacion/despliegue/README.md
+@@ -1,10 +1,11 @@
+ # Documentación de despliegue
+ 
+-RedDiff admite dos modalidades de despliegue:
++RedDiff admite las siguientes modalidades de despliegue:
+ 
+-- [Producción con Docker Compose](produccion-docker-compose.md), recomendada para servidores Linux;
+-- [Producción nativa en Windows](produccion-windows-nativo.md), basada en IIS, ASP.NET Core y PostgreSQL para Windows.
++- [Docker Compose en Windows 11](produccion-docker-compose-windows.md), ruta principal para LABYMED S.A.;
++- [Docker Compose en Linux](produccion-docker-compose.md), equivalente para servidores Linux;
++- [Producción nativa en Windows](produccion-windows-nativo.md), alternativa de contingencia basada en IIS y PostgreSQL local.
+ 
+-Ambos procedimientos conservan secretos externos, persistencia de claves, migraciones controladas, verificaciones de salud y respaldos operativos.
++Los procedimientos con Compose conservan secretos externos, persistencia de claves, migraciones controladas, verificaciones de salud y respaldos operativos.
+ 
+ La composición conserva PostgreSQL y las claves criptográficas en volúmenes diferentes, no publica la base de datos y exige HTTPS para la web y validación TLS completa entre la API y PostgreSQL.
+diff --git a/documentacion/despliegue/produccion-docker-compose-windows.md b/documentacion/despliegue/produccion-docker-compose-windows.md
+new file mode 100644
+index 0000000..2578583
+--- /dev/null
++++ b/documentacion/despliegue/produccion-docker-compose-windows.md
+@@ -0,0 +1,193 @@
++# Produccion con Docker Compose en Windows 11
++
++## Alcance
++
++Este procedimiento despliega RedDiff en una PC fisica con Windows 11 mediante Docker Desktop y contenedores Linux. Todos los comandos operativos se ejecutan desde PowerShell. Windows no necesita IIS, PostgreSQL, .NET, Node.js, Angular CLI, Nginx ni OpenSSL instalados directamente.
++
++La composicion incluye:
++
++- Nginx con la compilacion productiva de Angular y HTTPS;
++- la API ASP.NET Core sobre .NET 10;
++- PostgreSQL 18 con TLS y volumen persistente;
++- migraciones controladas y una cuenta de base de datos con privilegios limitados;
++- inicializacion separada de la primera cuenta administrativa;
++- recepcion Syslog en UDP 514;
++- volumen persistente para las claves de proteccion de credenciales.
++
++## Requisitos
++
++- Windows 11 Pro o Enterprise x64 con soporte vigente;
++- virtualizacion habilitada en BIOS o UEFI;
++- WSL 2 actualizado;
++- Docker Desktop configurado con el motor WSL 2 y **Linux containers**;
++- Docker Compose incluido en Docker Desktop;
++- Git para obtener y actualizar el repositorio;
++- PowerShell 5.1 o PowerShell 7;
++- al menos 4 nucleos, 8 GB de RAM y 80 GB disponibles como punto de partida;
++- nombre DNS estable para RedDiff y hora sincronizada.
++
++El perfil de red de Windows debe ser `Domain` o `Private`. Las reglas suministradas no habilitan RedDiff en perfiles publicos.
++
++## Puertos
++
++| Direccion | Puerto | Origen o destino | Uso |
++| --- | ---: | --- | --- |
++| Entrada | TCP 443 | Equipos administradores autorizados | Interfaz HTTPS |
++| Entrada | UDP 514 | Dispositivos Cisco autorizados | Eventos Syslog |
++| Salida | TCP 22 | Dispositivos registrados | Captura SSH |
++| Salida | TCP 830 | Dispositivos registrados | Captura NETCONF |
++
++PostgreSQL y el puerto HTTP de la API no se publican en Windows.
++
++## 1. Preparar Windows
++
++Instale WSL 2 y Docker Desktop, reinicie cuando Windows lo solicite y confirme en Docker Desktop:
++
++1. **Use the WSL 2 based engine** habilitado.
++2. Motor configurado en **Linux containers**.
++3. Inicio automatico de Docker Desktop habilitado.
++
++Abra PowerShell y ejecute desde la raiz del repositorio:
++
++```powershell
++Set-ExecutionPolicy -Scope Process Bypass
++.\automatizacion\powershell\produccion-docker\Verificar-RequisitosWindows.ps1
++```
++
++## 2. Preparar configuracion, secretos y certificados
++
++Abra PowerShell **como administrador**. Sustituya las redes por los rangos reales autorizados:
++
++```powershell
++Set-Location C:\Proyectos\RedDiff
++Set-ExecutionPolicy -Scope Process Bypass
++
++.\automatizacion\powershell\produccion-docker\Preparar-Produccion.ps1 `
++    -NombreHost 'reddiff.labymed.local' `
++    -OrigenWeb '192.168.200.0/24' `
++    -OrigenSyslog '192.168.200.0/24' `
++    -ConfigurarHostWindows `
++    -AgregarResolucionLocal
++```
++
++El script:
++
++- crea `configuracion\entornos\produccion.env` sin incorporarlo a Git;
++- genera contrasenas independientes para PostgreSQL;
++- construye un contenedor auxiliar con OpenSSL para emitir la autoridad y los certificados;
++- no reemplaza secretos o certificados existentes;
++- limita mediante ACL el directorio de secretos;
++- instala la autoridad interna en `LocalMachine\Root`;
++- crea reglas de firewall restringidas a `Domain` y `Private`;
++- agrega resolucion local en `hosts` cuando se solicita.
++
++Si la generacion de certificados se interrumpe, el script conservara los archivos creados y rechazara un conjunto incompleto para evitar reemplazos accidentales. Retire ese conjunto solamente despues de confirmar que corresponde a una instalacion nueva y repita la preparacion.
++
++Para acceso desde otros equipos, publique el nombre en el DNS interno e instale `autoridad_certificadora.crt` como autoridad confiable en cada cliente autorizado. En produccion puede reemplazarse el certificado web por uno emitido por la PKI corporativa.
++
++## 3. Desplegar
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Desplegar-Produccion.ps1
++```
++
++La operacion valida Compose, construye las imagenes, inicia PostgreSQL, aplica las migraciones, restablece privilegios limitados e inicia la API y Nginx. Se detiene si algun servicio no alcanza el estado saludable.
++
++## 4. Crear la primera cuenta
++
++Ejecute una sola vez:
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Inicializar-Administrador.ps1
++```
++
++La contrasena se solicita sin mostrarla, se monta solo durante la operacion y el archivo temporal se vacia al finalizar.
++
++## 5. Verificar
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Verificar-Produccion.ps1
++```
++
++La comprobacion exige:
++
++- PostgreSQL, API y web saludables;
++- respuesta HTTP 200 de `/salud/listo` con certificado confiable;
++- TCP 443 accesible localmente;
++- UDP 514 publicado por Docker;
++- PostgreSQL sin puerto publicado en Windows.
++
++Abra `https://reddiff.labymed.local` y pruebe el inicio de sesion.
++
++## 6. Validacion Syslog obligatoria
++
++Configure un dispositivo autorizado para enviar Syslog a la direccion IPv4 de la PC Windows y al puerto UDP 514. Genere un cambio controlado y confirme en RedDiff:
++
++1. el evento conserva la IP real del dispositivo;
++2. un cambio de contenido crea una nueva version;
++3. un segundo evento sin cambios queda como `SinCambios` y no duplica la version.
++
++Esta prueba es obligatoria porque Docker Desktop incorpora una capa de red. Si la aplicacion recibe una direccion distinta a la del dispositivo, no reduzca la validacion de seguridad: documente el resultado y ajuste la red antes de autorizar produccion.
++
++## 7. Respaldar
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Respaldar-Produccion.ps1
++```
++
++El respaldo se crea en `respaldos\produccion` e incluye:
++
++- `base-datos.dump`;
++- `claves-proteccion.tar.gz`;
++- `manifiesto.sha256`.
++
++Copie cada respaldo a un medio cifrado externo. Los certificados y secretos del directorio `configuracion\secretos\produccion` requieren una copia protegida independiente. Perder la base, las claves de proteccion o las contrasenas impide una recuperacion completa.
++
++## 8. Restaurar
++
++La restauracion reemplaza los datos actuales. Realicela solamente durante una ventana autorizada y con un respaldo verificado:
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Restaurar-Produccion.ps1 `
++    -RutaRespaldo 'C:\Respaldos\reddiff-20261014T030000Z' `
++    -Confirmar
++```
++
++El script valida el manifiesto, detiene web y API, restaura PostgreSQL y las claves, restablece privilegios, inicia los servicios y ejecuta la verificacion tecnica.
++
++## 9. Actualizar
++
++Con el repositorio limpio:
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Actualizar-Produccion.ps1 -Confirmar
++```
++
++La operacion crea un respaldo, exige un arbol de trabajo limpio, ejecuta `git pull --ff-only`, reconstruye la composicion y verifica la nueva version. Use `-OmitirGitPull` cuando los archivos se entreguen por un medio distinto de Git.
++
++## 10. Detener sin eliminar datos
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Detener-Produccion.ps1
++```
++
++No ejecute `docker compose down --volumes`: eliminaria la base de datos y las claves de proteccion.
++
++## Reinicios de Windows
++
++Los servicios usan `restart: unless-stopped`. Cuando Docker Desktop vuelve a iniciar, Docker recupera los contenedores. Docker Desktop debe estar configurado para iniciar con la sesion de la cuenta operativa. Despues de cada reinicio ejecute:
++
++```powershell
++.\automatizacion\powershell\produccion-docker\Verificar-Produccion.ps1
++```
++
++## Criterios de aceptacion
++
++- Windows 11 y Docker Desktop reinician sin errores.
++- Todos los servicios aparecen `healthy`.
++- HTTPS utiliza un certificado confiable y el nombre correcto.
++- PostgreSQL no se publica en el host.
++- SSH y NETCONF salen desde los contenedores hacia los dispositivos autorizados.
++- Syslog conserva la direccion del dispositivo y activa captura deduplicada.
++- El respaldo y una restauracion controlada finalizan correctamente.
++- Secretos, archivos `.env`, configuraciones capturadas y respaldos no se incorporan a Git.
+diff --git a/documentacion/despliegue/produccion-docker-compose.md b/documentacion/despliegue/produccion-docker-compose.md
+index b681b4e..1060aad 100644
+--- a/documentacion/despliegue/produccion-docker-compose.md
++++ b/documentacion/despliegue/produccion-docker-compose.md
+@@ -1,4 +1,6 @@
+-# Producción con Docker Compose
++# Producción con Docker Compose en Linux
++
++> Para el despliegue objetivo de LABYMED sobre Windows 11 consulte [Docker Compose en Windows 11](produccion-docker-compose-windows.md).
+ 
+ ## Alcance
+ 
+diff --git a/documentacion/pruebas/integracion-continua.md b/documentacion/pruebas/integracion-continua.md
+index 55c5f72..f6afe5c 100644
+--- a/documentacion/pruebas/integracion-continua.md
++++ b/documentacion/pruebas/integracion-continua.md
+@@ -20,10 +20,10 @@ La concurrencia cancela una ejecución anterior de la misma rama cuando llega un
+ | --------------- | ----------------------------------------------------------------------- |
+ | Servidor .NET   | Restauración, compilación `Release` y todas las pruebas de la solución. |
+ | Cliente Angular | `npm ci`, Prettier, pruebas Vitest y compilación de producción.         |
+-| Imágenes Docker | Construcción de PostgreSQL, API y web después de superar las pruebas.   |
+-| Paquete Windows | Publicación `win-x64`, Angular incorporado y artefacto descargable durante 14 días. |
++| Imágenes y Docker Compose | Validación de Compose y construcción de certificados, PostgreSQL, API y web. |
++| Paquete Windows | Validación sintáctica de PowerShell y publicación nativa alternativa `win-x64`. |
+ 
+-Servidor y cliente se ejecutan en paralelo. Las imágenes y el paquete Windows se construyen únicamente cuando ambos trabajos terminan correctamente. Las pruebas de API usan sus dobles controlados y una base de datos en memoria; el flujo no abre conexiones SSH o NETCONF, no escucha Syslog y no necesita credenciales de PostgreSQL.
++Servidor y cliente se ejecutan en paralelo. Las imágenes, Compose y la automatización PowerShell se validan únicamente cuando ambos trabajos terminan correctamente. Las pruebas de API usan sus dobles controlados y una base de datos en memoria; el flujo no abre conexiones SSH o NETCONF ni recibe Syslog real.
+ 
+ ## Seguridad y reproducibilidad
+ 
+@@ -53,7 +53,7 @@ npm run build
+ Set-Location ..
+ ```
+ 
+-Un resultado local correcto no garantiza por sí solo que GitHub finalice correctamente: después del `push` también debe comprobarse que **Servidor .NET**, **Cliente Angular**, **Imágenes Docker** y **Paquete Windows** aparezcan en verde.
++Un resultado local correcto no garantiza por sí solo que GitHub finalice correctamente: después del `push` también debe comprobarse que **Servidor .NET**, **Cliente Angular**, **Imágenes y Docker Compose** y **Paquete Windows** aparezcan en verde.
+ 
+ ## Protección recomendada de `main`
+ 
+diff --git a/infraestructura/README.md b/infraestructura/README.md
+index 1e0e8cc..5e96bf2 100644
+--- a/infraestructura/README.md
++++ b/infraestructura/README.md
+@@ -4,11 +4,11 @@ Recursos necesarios para ejecutar y desplegar el sistema sin mezclar detalles op
+ 
+ | Carpeta | Finalidad |
+ | --- | --- |
+-| `contenedores` | Imágenes y composición de servicios. |
++| `contenedores` | Imágenes y composición de servicios para Windows 11 o Linux. |
+ | `base-datos` | Inicialización y recursos operativos de PostgreSQL. |
+ | `certificados` | Instrucciones y plantillas; nunca llaves privadas versionadas. |
+ | `proxy-inverso` | Enrutamiento, TLS y cabeceras de seguridad. |
+ | `observabilidad` | Logs, métricas, trazas y alertas. |
+-| `windows` | Instalación, actualización, verificación y respaldo nativos en Windows. |
++| `windows` | Variante nativa de contingencia para Windows. |
+ 
+ No se almacenan secretos, datos productivos ni configuraciones reales de dispositivos en esta carpeta.
+diff --git a/infraestructura/contenedores/README.md b/infraestructura/contenedores/README.md
+index c1cb057..b584272 100644
+--- a/infraestructura/contenedores/README.md
++++ b/infraestructura/contenedores/README.md
+@@ -2,7 +2,7 @@
+ 
+ ## Composición de desarrollo
+ 
+-`compose.desarrollo.yml` mantiene PostgreSQL para el trabajo local. La composición completa de producción se encuentra en `produccion/compose.yml` e incorpora PostgreSQL, API y cliente web.
++`compose.desarrollo.yml` mantiene PostgreSQL para el trabajo local. La composicion completa de produccion se encuentra en `produccion/compose.yml` e incorpora PostgreSQL, API y cliente web. Puede administrarse desde Windows 11 con los scripts de `automatizacion/powershell/produccion-docker` o desde Linux con los scripts Bash.
+ 
+ Controles incluidos:
+ 
+@@ -20,4 +20,4 @@ Los comandos operativos están documentados en [../../documentacion/operacion/ba
+ 
+ La composición productiva incluye compilaciones multietapa, usuarios sin privilegios para la API y Nginx, comprobaciones de salud, redes separadas, TLS, volúmenes persistentes y secretos montados desde archivos excluidos de Git.
+ 
+-El procedimiento obligatorio se encuentra en [producción con Docker Compose](../../documentacion/despliegue/produccion-docker-compose.md).
++El procedimiento objetivo para LABYMED se encuentra en [Docker Compose sobre Windows 11](../../documentacion/despliegue/produccion-docker-compose-windows.md). La variante Linux permanece documentada en [produccion con Docker Compose](../../documentacion/despliegue/produccion-docker-compose.md).
+diff --git a/infraestructura/contenedores/produccion/certificados/Dockerfile b/infraestructura/contenedores/produccion/certificados/Dockerfile
+new file mode 100644
+index 0000000..8efd44b
+--- /dev/null
++++ b/infraestructura/contenedores/produccion/certificados/Dockerfile
+@@ -0,0 +1,10 @@
++FROM alpine:3.22
++
++RUN apk add --no-cache openssl
++
++COPY infraestructura/contenedores/produccion/certificados/generar-certificados.sh \
++    /usr/local/bin/generar-certificados.sh
++
++RUN chmod 0555 /usr/local/bin/generar-certificados.sh
++
++ENTRYPOINT ["/usr/local/bin/generar-certificados.sh"]
+diff --git a/infraestructura/contenedores/produccion/certificados/generar-certificados.sh b/infraestructura/contenedores/produccion/certificados/generar-certificados.sh
+new file mode 100644
+index 0000000..0b2747f
+--- /dev/null
++++ b/infraestructura/contenedores/produccion/certificados/generar-certificados.sh
+@@ -0,0 +1,91 @@
++#!/bin/sh
++
++set -eu
++
++nombre_host="${1:-}"
++salida="${REDDIFF_DIRECTORIO_SALIDA:-/salida}"
++
++if [ -z "$nombre_host" ]; then
++    echo "Debe indicar el nombre DNS o la direccion IP de RedDiff." >&2
++    exit 1
++fi
++
++case "$nombre_host" in
++    *[!A-Za-z0-9.-]*)
++        echo "El nombre del host contiene caracteres no permitidos." >&2
++        exit 1
++        ;;
++esac
++
++archivos='autoridad_certificadora.crt autoridad_certificadora.key postgresql_servidor.crt postgresql_servidor.key reddiff_https.crt reddiff_https.key'
++for archivo in $archivos; do
++    if [ -e "$salida/$archivo" ]; then
++        echo "El archivo $salida/$archivo ya existe; no se reemplazara." >&2
++        exit 1
++    fi
++done
++
++temporal="$(mktemp -d)"
++trap 'rm -rf "$temporal"' EXIT
++umask 077
++
++openssl req -x509 -newkey rsa:4096 -sha256 -nodes \
++    -days 3650 \
++    -subj '/CN=RedDiff Autoridad Interna' \
++    -keyout "$salida/autoridad_certificadora.key" \
++    -out "$salida/autoridad_certificadora.crt"
++
++cat > "$temporal/postgresql.ext" <<'EOF'
++[v3_servidor]
++basicConstraints=CA:FALSE
++keyUsage=digitalSignature,keyEncipherment
++extendedKeyUsage=serverAuth
++subjectAltName=DNS:base-datos
++EOF
++
++openssl req -new -newkey rsa:3072 -sha256 -nodes \
++    -subj '/CN=base-datos' \
++    -keyout "$salida/postgresql_servidor.key" \
++    -out "$temporal/postgresql.csr"
++
++openssl x509 -req -sha256 -days 825 \
++    -in "$temporal/postgresql.csr" \
++    -CA "$salida/autoridad_certificadora.crt" \
++    -CAkey "$salida/autoridad_certificadora.key" \
++    -CAcreateserial \
++    -extfile "$temporal/postgresql.ext" \
++    -extensions v3_servidor \
++    -out "$salida/postgresql_servidor.crt"
++
++case "$nombre_host" in
++    *[!0-9.]*) san_web="DNS:$nombre_host" ;;
++    *) san_web="IP:$nombre_host" ;;
++esac
++
++cat > "$temporal/web.ext" <<EOF
++[v3_servidor]
++basicConstraints=CA:FALSE
++keyUsage=digitalSignature,keyEncipherment
++extendedKeyUsage=serverAuth
++subjectAltName=$san_web
++EOF
++
++openssl req -new -newkey rsa:3072 -sha256 -nodes \
++    -subj "/CN=$nombre_host" \
++    -keyout "$salida/reddiff_https.key" \
++    -out "$temporal/web.csr"
++
++openssl x509 -req -sha256 -days 825 \
++    -in "$temporal/web.csr" \
++    -CA "$salida/autoridad_certificadora.crt" \
++    -CAkey "$salida/autoridad_certificadora.key" \
++    -CAcreateserial \
++    -extfile "$temporal/web.ext" \
++    -extensions v3_servidor \
++    -out "$salida/reddiff_https.crt"
++
++rm -f "$salida/autoridad_certificadora.srl"
++chmod 0600 "$salida"/*.key
++chmod 0644 "$salida"/*.crt
++
++echo "Certificados generados para $nombre_host."

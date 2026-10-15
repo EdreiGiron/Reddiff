@@ -20,10 +20,10 @@ La concurrencia cancela una ejecución anterior de la misma rama cuando llega un
 | --------------- | ----------------------------------------------------------------------- |
 | Servidor .NET   | Restauración, compilación `Release` y todas las pruebas de la solución. |
 | Cliente Angular | `npm ci`, Prettier, pruebas Vitest y compilación de producción.         |
-| Imágenes Docker | Construcción de PostgreSQL, API y web después de superar las pruebas.   |
-| Paquete Windows | Publicación `win-x64`, Angular incorporado y artefacto descargable durante 14 días. |
+| Imágenes y Docker Compose | Validación de Compose y construcción de certificados, PostgreSQL, API y web. |
+| Paquete Windows | Validación sintáctica de PowerShell y publicación nativa alternativa `win-x64`. |
 
-Servidor y cliente se ejecutan en paralelo. Las imágenes y el paquete Windows se construyen únicamente cuando ambos trabajos terminan correctamente. Las pruebas de API usan sus dobles controlados y una base de datos en memoria; el flujo no abre conexiones SSH o NETCONF, no escucha Syslog y no necesita credenciales de PostgreSQL.
+Servidor y cliente se ejecutan en paralelo. Las imágenes, Compose y la automatización PowerShell se validan únicamente cuando ambos trabajos terminan correctamente. Las pruebas de API usan sus dobles controlados y una base de datos en memoria; el flujo no abre conexiones SSH o NETCONF ni recibe Syslog real.
 
 ## Seguridad y reproducibilidad
 
@@ -53,7 +53,7 @@ npm run build
 Set-Location ..
 ```
 
-Un resultado local correcto no garantiza por sí solo que GitHub finalice correctamente: después del `push` también debe comprobarse que **Servidor .NET**, **Cliente Angular**, **Imágenes Docker** y **Paquete Windows** aparezcan en verde.
+Un resultado local correcto no garantiza por sí solo que GitHub finalice correctamente: después del `push` también debe comprobarse que **Servidor .NET**, **Cliente Angular**, **Imágenes y Docker Compose** y **Paquete Windows** aparezcan en verde.
 
 ## Protección recomendada de `main`
 

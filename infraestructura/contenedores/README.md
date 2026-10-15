@@ -2,7 +2,7 @@
 
 ## Composición de desarrollo
 
-`compose.desarrollo.yml` mantiene PostgreSQL para el trabajo local. La composición completa de producción se encuentra en `produccion/compose.yml` e incorpora PostgreSQL, API y cliente web.
+`compose.desarrollo.yml` mantiene PostgreSQL para el trabajo local. La composicion completa de produccion se encuentra en `produccion/compose.yml` e incorpora PostgreSQL, API y cliente web. Puede administrarse desde Windows 11 con los scripts de `automatizacion/powershell/produccion-docker` o desde Linux con los scripts Bash.
 
 Controles incluidos:
 
@@ -20,4 +20,4 @@ Los comandos operativos están documentados en [../../documentacion/operacion/ba
 
 La composición productiva incluye compilaciones multietapa, usuarios sin privilegios para la API y Nginx, comprobaciones de salud, redes separadas, TLS, volúmenes persistentes y secretos montados desde archivos excluidos de Git.
 
-El procedimiento obligatorio se encuentra en [producción con Docker Compose](../../documentacion/despliegue/produccion-docker-compose.md).
+El procedimiento objetivo para LABYMED se encuentra en [Docker Compose sobre Windows 11](../../documentacion/despliegue/produccion-docker-compose-windows.md). La variante Linux permanece documentada en [produccion con Docker Compose](../../documentacion/despliegue/produccion-docker-compose.md).

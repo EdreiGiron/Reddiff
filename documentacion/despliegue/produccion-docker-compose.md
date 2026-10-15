@@ -1,4 +1,6 @@
-# Producción con Docker Compose
+# Producción con Docker Compose en Linux
+
+> Para el despliegue objetivo de LABYMED sobre Windows 11 consulte [Docker Compose en Windows 11](produccion-docker-compose-windows.md).
 
 ## Alcance
 

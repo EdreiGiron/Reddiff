@@ -1,5 +1,7 @@
 # 0018. Despliegue nativo en Windows
 
+> Estado: reemplazada para el despliegue objetivo por la ADR 0019. Se conserva como alternativa documentada de contingencia.
+
 ## Estado
 
 Aceptada.

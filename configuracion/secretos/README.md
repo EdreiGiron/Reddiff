@@ -17,8 +17,8 @@ Después de validar la migración inicial, las credenciales pueden renovarse de 
 
 La operación cambia ambas identidades dentro de una transacción, recrea el contenedor y verifica las conexiones administrativa y de aplicación. Los archivos temporales `.nuevo` y `.anterior` permanecen ignorados y solo se conservan si hace falta recuperar una rotación incompleta.
 
-Para la instalación productiva con Docker Compose, `Preparar-Produccion.sh` crea un subdirectorio `produccion` con contraseñas y material criptográfico exclusivo del ambiente. Todo el subdirectorio permanece fuera de Git y del contexto de construcción.
+Para Docker Compose en Windows 11, `automatizacion/powershell/produccion-docker/Preparar-Produccion.ps1` crea el subdirectorio `produccion`, genera contrasenas y utiliza un contenedor auxiliar para emitir el material criptografico. La variante Linux ofrece el flujo equivalente mediante `Preparar-Produccion.sh`. Todo el subdirectorio permanece fuera de Git y del contexto de construccion.
 
-La instalación nativa de Windows no utiliza esta carpeta. Conserva sus secretos en `C:\ProgramData\RedDiff\secretos` y aplica ACL para que el grupo de aplicaciones IIS solo pueda leer la contraseña limitada de la aplicación; la credencial administrativa permanece disponible únicamente para `SYSTEM` y administradores locales.
+La instalacion nativa alternativa de Windows no utiliza esta carpeta. Conserva sus secretos en `C:\ProgramData\RedDiff\secretos`.
 
 En una instalación definitiva, sus permisos, respaldo cifrado y acceso deben quedar bajo control de los operadores designados por LABYMED. La clave de la autoridad certificadora no se monta en los servicios y debe guardarse separadamente después de emitir los certificados.

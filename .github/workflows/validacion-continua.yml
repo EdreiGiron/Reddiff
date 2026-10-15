@@ -78,7 +78,7 @@ jobs:
         run: npm run build
 
   contenedores:
-    name: Imágenes Docker
+    name: Imágenes y Docker Compose
     needs:
       - servidor
       - cliente
@@ -89,6 +89,38 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Preparar archivos ficticios para validar Compose
+        shell: bash
+        run: |
+          cp configuracion/entornos/produccion.env.example configuracion/entornos/produccion.env
+          mkdir -p configuracion/secretos/produccion
+          for archivo in \
+            postgresql_contrasena.txt \
+            postgresql_aplicacion_contrasena.txt \
+            administrador_inicial_contrasena.txt \
+            autoridad_certificadora.crt \
+            postgresql_servidor.crt \
+            postgresql_servidor.key \
+            reddiff_https.crt \
+            reddiff_https.key
+          do
+            printf 'solo-validacion-ci' > "configuracion/secretos/produccion/$archivo"
+          done
+
+      - name: Validar Docker Compose productivo
+        run: >-
+          docker compose
+          --env-file configuracion/entornos/produccion.env
+          --file infraestructura/contenedores/produccion/compose.yml
+          config --quiet
+
+      - name: Construir herramienta de certificados
+        run: >-
+          docker build
+          --file infraestructura/contenedores/produccion/certificados/Dockerfile
+          --tag reddiff-certificados:validacion
+          .
 
       - name: Construir imagen de PostgreSQL
         run: >-
@@ -135,6 +167,28 @@ jobs:
           node-version: 24.19.0
           cache: npm
           cache-dependency-path: cliente/package-lock.json
+
+      - name: Validar sintaxis de scripts PowerShell
+        shell: pwsh
+        run: |
+          $errores = [System.Collections.Generic.List[string]]::new()
+          Get-ChildItem ./automatizacion/powershell -Filter *.ps1 -Recurse | ForEach-Object {
+            $tokens = $null
+            $erroresArchivo = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref] $tokens,
+              [ref] $erroresArchivo
+            ) | Out-Null
+
+            foreach ($errorArchivo in $erroresArchivo) {
+              $errores.Add("$($_.FullName): $($errorArchivo.Message)")
+            }
+          }
+
+          if ($errores.Count -gt 0) {
+            throw ($errores -join [Environment]::NewLine)
+          }
 
       - name: Generar paquete instalable
         shell: pwsh
